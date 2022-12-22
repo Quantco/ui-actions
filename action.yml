@@ -1,0 +1,36 @@
+name: Get Version
+author: Jannik Wibker
+description: An action that allows you to check whether your npm package version has been updated
+
+inputs:
+  file:
+    description: The path to the package.json file
+    required: false
+    default: package.json
+  token:
+    description: GitHub token used for authentication (you can use secrets.GITHUB_TOKEN)
+    required: true
+
+outputs:
+  changed:
+    description: Has the version changed since the last time the action was run?
+  type:
+    description: The type of version change ('major', 'minor', 'patch', 'pre-release')
+  oldVersion:
+    description: Previous version number
+  newVersion:
+    description: New version number
+  commit:
+    description: The SHA of the commit that last changed the version number
+  changedFiles:
+    description: All files changed between the examined commits, categorized by type (added, modified, removed, renamed, all)
+  changes:
+    description: List of all changes to the version number since the last time the action was run. This includes old version, new version, type of change, and the commit SHA for each change.
+
+runs:
+  using: node16
+  main: 'dist/index.js'
+
+branding:
+  icon: package
+  color: purple
