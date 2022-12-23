@@ -239,7 +239,8 @@ async function run() {
   }
   const changedFilesCategorized = { all, added, modified, removed, renamed }
   
-  const commits = commitDiff.data.commits
+  // filter merge commits as they disrupt the versioning logic (they contain all changes of the PR again)
+  const commits = commitDiff.data.commits.filter(commit => commit.parents.length === 1)
   
   // all versions of the package.json file in between the base and head commits
   // this has a lot of duplicates, as the file doesn't necessarily change in each commit
@@ -270,14 +271,14 @@ async function run() {
   }
 
   // can now assert that all requests were successful, as the status code is 200
-  const allIterationsOfPackageJson = maybeAllIterationsOfPackageJson.map(({ response }) => response.data) as NarrowedGetContentResponse[]
+  const allIterationsOfPackageJson = maybeAllIterationsOfPackageJson.map(({ response, sha }) => ({ ...response.data, sha })) as NarrowedGetContentResponse[]
   
   // remove duplicates from `allIterationsOfPackageJson`
   const deduplicatedVersionsOfPackageJson = allIterationsOfPackageJson.reduce(deduplicateConsecutive((x) => x.content), { list: [], last: undefined }).list
 
   const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(({ content, sha, git_url }) => {
     if (!content) throw new Error(`content is undefined, this should not happen (${sha} / ${git_url})`)
-    const parsed = JSON.parse(content) // TODO: catch and rethrow with more context?
+    const parsed = JSON.parse(Buffer.from(content, 'base64').toString()) // TODO: catch and rethrow with more context?
     if (!parsed.version) throw new Error(`version is undefined, this should not happen (${sha} / ${git_url})`)
 
     return { version: parsed.version, sha }
@@ -301,9 +302,8 @@ async function run() {
     return { list: [...acc.list, versionChange], last: curr }
   }, { list: [] as VersionChange[], last: undefined as { version: string; sha: string; } | undefined }).list
 
-
   return computeResponseFromChanges(changes, changedFilesCategorized)
 }
 
 // TODO: deal with output to github action
-run()
+run().then(console.log)
