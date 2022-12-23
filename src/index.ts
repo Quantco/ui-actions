@@ -1,6 +1,22 @@
-import * as core from '@actions/core'
+import * as coreDefault from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 import { normalize } from 'path'
+
+const coreMocked = {
+  setFailed: (msg: string) => {
+    console.error(msg)
+    process.exit(1)
+  },
+  getInput: (name: string) => {
+    const value = process.env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`]
+    if (value === undefined) {
+      throw new Error(`Input required and not supplied: ${name}`)
+    }
+    return value
+  }
+}
+
+const core = process.env.MOCKING ? coreMocked : coreDefault
 
 // TODO: error handling and error messages
 
