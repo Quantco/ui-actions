@@ -1,6 +1,6 @@
+import { normalize } from 'path'
 import * as coreDefault from '@actions/core'
 import { context, getOctokit } from '@actions/github'
-import { normalize } from 'path'
 
 const coreMocked = {
   setFailed: (msg: string) => {
@@ -35,22 +35,23 @@ type VersionChange = {
   newVersion: string
   type: VersionDiffType
   commit: string
-  // changedFiles: CategorizedChangedFiles // TODO: this is a tad bit annoying to compute
 }
 
-type GetVersionResponse = {
-  changed: false
-  changes: never[]
-  changedFiles: CategorizedChangedFiles
-} | {
-  changed: true
-  oldVersion: string
-  newVersion: string
-  type: VersionDiffType
-  commit: string
-  changedFiles: CategorizedChangedFiles
-  changes: VersionChange[]
-}
+type GetVersionResponse =
+  | {
+      changed: false
+      changes: never[]
+      changedFiles: CategorizedChangedFiles
+    }
+  | {
+      changed: true
+      oldVersion: string
+      newVersion: string
+      type: VersionDiffType
+      commit: string
+      changedFiles: CategorizedChangedFiles
+      changes: VersionChange[]
+    }
 
 /**
  * Parses a semver version string into its components
@@ -59,11 +60,11 @@ type GetVersionResponse = {
  * - minor (number; required)
  * - patch (number; required)
  * - preRelease (string, optional)
- * 
+ *
  * Thus:
  * - `major.minor.patch` is supported
  * - `major.minor.patch-preRelease` is supported
- * 
+ *
  * @example
  * parseSemverVersion('1.0.0') // { major: 1, minor: 0, patch: 0, preRelease: undefined }
  * parseSemverVersion('1.0.0-3') // { major: 1, minor: 0, patch: 0, preRelease: '3' }
@@ -78,17 +79,17 @@ const parseSemverVersion = (version: string) => {
     major: parseInt(major),
     minor: parseInt(minor),
     patch: parseInt(patch),
-    preRelease,
+    preRelease
   }
 }
 
 /**
  * Computes the type of change between two semver versions
  * Supports the same format as `parseSemverVersion`
- * 
+ *
  * Returns `'equal'` if the versions are equal
  * Otherwise returns the largest change type
- * 
+ *
  * @example
  * getSemverDiffType('1.0.0', '1.0.0') // 'equal'
  * getSemverDiffType('1.0.0', '1.0.1') // 'patch'
@@ -109,12 +110,17 @@ const getSemverDiffType = (versionA: string, versionB: string): VersionDiffType 
   if (patchA !== patchB) return 'patch'
   if (preReleaseA !== preReleaseB) return 'pre-release'
 
-  if(versionA === versionB) return 'equal'
+  if (versionA === versionB) return 'equal'
 
-  throw new Error(`Could not determine the type of change between '${versionA}' and '${versionB}', this can usually not happen`)
+  throw new Error(
+    `Could not determine the type of change between '${versionA}' and '${versionB}', this can usually not happen`
+  )
 }
 
-const computeResponseFromChanges = (changes: VersionChange[], changedFiles: CategorizedChangedFiles): GetVersionResponse => {
+const computeResponseFromChanges = (
+  changes: VersionChange[],
+  changedFiles: CategorizedChangedFiles
+): GetVersionResponse => {
   if (changes.length === 0) {
     return { changed: false, changes: [], changedFiles }
   } else {
@@ -135,21 +141,18 @@ const computeResponseFromChanges = (changes: VersionChange[], changedFiles: Cate
 
 /**
  * Determines the base and head commits from the payload
- * 
+ *
  * This is necessary because the payload for pull requests and pushes are different
- * 
+ *
  * For PRs:
  * - context.payload.pull_request?.base?.sha
  * - context.payload.pull_request?.head?.sha
- * 
+ *
  * For pushes:
  * - context.payload.before
  * - context.payload.after
  */
 const determineBaseAndHead = () => {
-
-  // adapted from: https://github.com/jitterbit/get-changed-files/blob/master/src/main.ts
-
   // Define the base and head commits to be extracted from the payload.
   let base: string | undefined
   let head: string | undefined
@@ -166,7 +169,7 @@ const determineBaseAndHead = () => {
     default:
       throw new Error(
         `This action only supports pull requests and pushes, ${context.eventName} events are not supported. ` +
-        "Please submit an issue on this action's GitHub repo if you believe this in correct."
+          "Please submit an issue on this action's GitHub repo if you believe this in correct."
       )
   }
 
@@ -174,7 +177,7 @@ const determineBaseAndHead = () => {
   if (!base || !head) {
     throw new Error(
       `The base and head commits are missing from the payload for this ${context.eventName} event. ` +
-      "Please submit an issue on this action's GitHub repo."
+        "Please submit an issue on this action's GitHub repo."
     )
   }
 
@@ -185,18 +188,20 @@ const determineBaseAndHead = () => {
  * deduplicates consecutive elements in an array
  * Consecutive elements are determined by the result of the accessor function, meaning that it is
  * possible to determine equality based on a property of the element instead of the element itself.
- * 
+ *
  * @example
  * const arr = [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5]
  * const deduplicated = arr.reduce(deduplicateConsecutive((x) => x), { list: [], last: undefined }).list
  */
-const deduplicateConsecutive = <T, E>(accessor: (input: T) => E) => (acc: { list: T[], last: E }, curr: T) => {
-  const value = accessor(curr)
-  if(!value) return acc
-  if (acc.last === value) return acc
+const deduplicateConsecutive =
+  <T, E>(accessor: (input: T) => E) =>
+  (acc: { list: T[]; last: E }, curr: T) => {
+    const value = accessor(curr)
+    if (!value) return acc
+    if (acc.last === value) return acc
 
-  return { list: [...acc.list, curr], last: value }
-}
+    return { list: [...acc.list, curr], last: value }
+  }
 
 /// --- MAIN ---
 
@@ -213,7 +218,7 @@ async function run() {
   // reference: https://octokit.github.io/rest.js/v19
   // Goto type definition and looking around isn't all that useful as the types are auto-generated and
   // basically describe the response types of a lot of rest calls using a lot of generic wrapper types.
-  // 
+  //
   // What works great however is auto-completion in the editor as the types for concrete objects are
   // all resolved correctly, just not "the bigger picture" (meaning all useful types in one place).
   const octokit = getOctokit(token)
@@ -221,12 +226,17 @@ async function run() {
   const { base, head } = determineBaseAndHead()
 
   // a lot of metadata about the files changed in between the base and head commits, the commits in between themselves, ...
-  const commitDiff = await octokit.rest.repos.compareCommits({ base, head, owner: context.repo.owner, repo: context.repo.repo })
-  
+  const commitDiff = await octokit.rest.repos.compareCommits({
+    base,
+    head,
+    owner: context.repo.owner,
+    repo: context.repo.repo
+  })
+
   // all changed files, categorized by type (added, modified, removed, renamed)
   const changedFiles = commitDiff.data.files
 
-  if(!changedFiles) {
+  if (!changedFiles) {
     core.setFailed('could not retrieve files changed in between base and head commits, aborting')
     return
   }
@@ -254,16 +264,19 @@ async function run() {
     }
   }
   const changedFilesCategorized = { all, added, modified, removed, renamed }
-  
+
   // filter merge commits as they disrupt the versioning logic (they contain all changes of the PR again)
-  const commits = commitDiff.data.commits.filter(commit => commit.parents.length === 1)
-  
+  const commits = commitDiff.data.commits.filter((commit) => commit.parents.length === 1)
+
   // all versions of the package.json file in between the base and head commits
   // this has a lot of duplicates, as the file doesn't necessarily change in each commit
-  const maybeAllIterationsOfPackageJson = await Promise.all(commits.map(commit => 
-    octokit.rest.repos.getContent({ owner: context.repo.owner, repo: context.repo.repo, path: packageJsonFile, ref: commit.sha })
-      .then((response) => ({ sha: commit.sha, response }))
-  ))
+  const maybeAllIterationsOfPackageJson = await Promise.all(
+    commits.map((commit) =>
+      octokit.rest.repos
+        .getContent({ owner: context.repo.owner, repo: context.repo.repo, path: packageJsonFile, ref: commit.sha })
+        .then((response) => ({ sha: commit.sha, response }))
+    )
+  )
 
   const failedRequests = maybeAllIterationsOfPackageJson.filter(({ response }) => response.status !== 200)
   if (failedRequests.length > 0) {
@@ -273,24 +286,30 @@ async function run() {
   }
 
   type NarrowedGetContentResponse = {
-    type: string;
-    size: number;
-    name: string;
-    path: string;
-    content?: string | undefined;
-    sha: string;
-    url: string;
-    git_url: string | null;
-    html_url: string | null;
-    download_url: string | null;
+    type: string
+    size: number
+    name: string
+    path: string
+    content?: string | undefined
+    sha: string
+    url: string
+    git_url: string | null
+    html_url: string | null
+    download_url: string | null
     // _links: ...
   }
 
   // can now assert that all requests were successful, as the status code is 200
-  const allIterationsOfPackageJson = maybeAllIterationsOfPackageJson.map(({ response, sha }) => ({ ...response.data, sha })) as NarrowedGetContentResponse[]
-  
+  const allIterationsOfPackageJson = maybeAllIterationsOfPackageJson.map(({ response, sha }) => ({
+    ...response.data,
+    sha
+  })) as NarrowedGetContentResponse[]
+
   // remove duplicates from `allIterationsOfPackageJson`
-  const deduplicatedVersionsOfPackageJson = allIterationsOfPackageJson.reduce(deduplicateConsecutive((x) => x.content), { list: [], last: undefined }).list
+  const deduplicatedVersionsOfPackageJson = allIterationsOfPackageJson.reduce(
+    deduplicateConsecutive((x) => x.content),
+    { list: [], last: undefined }
+  ).list
 
   const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(({ content, sha, git_url }) => {
     if (!content) throw new Error(`content is undefined, this should not happen (${sha} / ${git_url})`)
@@ -300,23 +319,29 @@ async function run() {
     return { version: parsed.version, sha }
   })
 
-  const deduplicatedVersions = allVersionsOfPackageJson.reduce(deduplicateConsecutive((x) => x.version), { list: [], last: undefined }).list
+  const deduplicatedVersions = allVersionsOfPackageJson.reduce(
+    deduplicateConsecutive((x) => x.version),
+    { list: [], last: undefined }
+  ).list
 
   // construct changes array from deduplicatedVersions
   // this works by going over the array and for each pair of consecutive versions constructing a VersionChange object
-  const changes = deduplicatedVersions.reduce((acc, curr, index) => {
-    if (index === 0) return { list: [] as VersionChange[], last: curr }
-    if (!acc.last) throw new Error('acc.last is undefined, this should not happen')
+  const changes = deduplicatedVersions.reduce(
+    (acc, curr, index) => {
+      if (index === 0) return { list: [] as VersionChange[], last: curr }
+      if (!acc.last) throw new Error('acc.last is undefined, this should not happen')
 
-    const versionChange: VersionChange = {
-      oldVersion: acc.last.version,
-      newVersion: curr.version,
-      // we previously deduplicated consecutive versions, this means the diff type cannot be 'equal'
-      type: getSemverDiffType(acc.last.version, curr.version) as VersionDiffType,
-      commit: curr.sha
-    }
-    return { list: [...acc.list, versionChange], last: curr }
-  }, { list: [] as VersionChange[], last: undefined as { version: string; sha: string; } | undefined }).list
+      const versionChange: VersionChange = {
+        oldVersion: acc.last.version,
+        newVersion: curr.version,
+        // we previously deduplicated consecutive versions, this means the diff type cannot be 'equal'
+        type: getSemverDiffType(acc.last.version, curr.version) as VersionDiffType,
+        commit: curr.sha
+      }
+      return { list: [...acc.list, versionChange], last: curr }
+    },
+    { list: [] as VersionChange[], last: undefined as { version: string; sha: string } | undefined }
+  ).list
 
   return computeResponseFromChanges(changes, changedFilesCategorized)
 }
