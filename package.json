@@ -1,13 +1,14 @@
 {
-  "name": "get-version",
+  "name": "version-metadata",
   "version": "1.0.0",
-  "description": "An action that allows you to check whether your npm package version has been updated",
+  "description": "An action that checks wether your package.json version has been updated with a bit of additional metadata",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint ./src --ext ts"
   },
   "author": "Jannik Wibker <jannik.wiker@quantco.com>",
+  "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/github": "^5.1.1"
