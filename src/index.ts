@@ -37,19 +37,35 @@ type VersionChange = {
   commit: string
 }
 
-type GetVersionResponse =
+type VersionMetadataResponse =
   | {
+      /** Has the version changed since the last time the action was run? */
       changed: false
+      /** commit SHA of the base commit (previous head before pushing / merging new commits) */
+      commitBase: string
+      /** commit SHA of the head commit */
+      commitHead: string
+      /** List of all changes to the version number since the last time the action was run. This includes old version, new version, type of change, and the commit SHA for each change */
       changes: never[]
+      /** All files changed between the examined commits, categorized by type (added, modified, removed, renamed, all) */
       changedFiles: CategorizedChangedFiles
     }
   | {
+      /** Has the version changed since the last time the action was run? */
       changed: true
       oldVersion: string
       newVersion: string
+      /** Has the version changed since the last time the action was run? */
       type: VersionDiffType
-      commit: string
+      /** The SHA of the commit that last changed the version number */
+      commitResponsible: string
+      /** commit SHA of the base commit (previous head before pushing / merging new commits) */
+      commitBase: string
+      /** commit SHA of the head commit */
+      commitHead: string
+      /** All files changed between the examined commits, categorized by type (added, modified, removed, renamed, all) */
       changedFiles: CategorizedChangedFiles
+      /** List of all changes to the version number since the last time the action was run. This includes old version, new version, type of change, and the commit SHA for each change */
       changes: VersionChange[]
     }
 
@@ -119,10 +135,12 @@ const getSemverDiffType = (versionA: string, versionB: string): VersionDiffType 
 
 const computeResponseFromChanges = (
   changes: VersionChange[],
-  changedFiles: CategorizedChangedFiles
-): GetVersionResponse => {
+  changedFiles: CategorizedChangedFiles,
+  base: string,
+  head: string
+): VersionMetadataResponse => {
   if (changes.length === 0) {
-    return { changed: false, changes: [], changedFiles }
+    return { changed: false, changes: [], changedFiles, commitBase: base, commitHead: head }
   } else {
     const oldVersion = changes[0].oldVersion
     const newVersion = changes[changes.length - 1].newVersion
@@ -132,7 +150,9 @@ const computeResponseFromChanges = (
       newVersion,
       // we know that the versions differ, therefore we can safely assume that the type is not 'equal'
       type: getSemverDiffType(oldVersion, newVersion) as VersionDiffType,
-      commit: changes[changes.length - 1].commit,
+      commitResponsible: changes[changes.length - 1].commit,
+      commitBase: base,
+      commitHead: head,
       changes,
       changedFiles
     }
@@ -311,10 +331,10 @@ async function run() {
     { list: [], last: undefined }
   ).list
 
-  const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(({ content, sha, git_url }) => {
-    if (!content) throw new Error(`content is undefined, this should not happen (${sha} / ${git_url})`)
+  const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(({ content, sha, git_url: gitUrl }) => {
+    if (!content) throw new Error(`content is undefined, this should not happen (${sha} / ${gitUrl})`)
     const parsed = JSON.parse(Buffer.from(content, 'base64').toString()) // TODO: catch and rethrow with more context?
-    if (!parsed.version) throw new Error(`version is undefined, this should not happen (${sha} / ${git_url})`)
+    if (!parsed.version) throw new Error(`version is undefined, this should not happen (${sha} / ${gitUrl})`)
 
     return { version: parsed.version, sha }
   })
@@ -343,7 +363,7 @@ async function run() {
     { list: [] as VersionChange[], last: undefined as { version: string; sha: string } | undefined }
   ).list
 
-  return computeResponseFromChanges(changes, changedFilesCategorized)
+  return computeResponseFromChanges(changes, changedFilesCategorized, base, head)
 }
 
 // TODO: deal with output to github action

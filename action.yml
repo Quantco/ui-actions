@@ -20,12 +20,18 @@ outputs:
     description: Previous version number
   newVersion:
     description: New version number
-  commit:
+  commitResponsible:
     description: The SHA of the commit that last changed the version number
+  commitBase: 
+    description: commit SHA of the base commit (previous head before pushing / merging new commits)
+  commitHead:
+    description: commit SHA of the head commit
   changedFiles:
     description: All files changed between the examined commits, categorized by type (added, modified, removed, renamed, all)
   changes:
     description: List of all changes to the version number since the last time the action was run. This includes old version, new version, type of change, and the commit SHA for each change.
+  json:
+    description: all of the above as stringified JSON (as you'd otherwise have to combine things back together again)
 
 runs:
   using: node16

@@ -60,6 +60,10 @@ changedFiles: (stringified JSON object)
 changes: (stringified JSON object)
   - { oldVersion: '1.2.2', newVersion: '1.2.3', type: 'patch', commit: 'A' }
   - { oldVersion: '1.2.3', newVersion: '1.2.4', type: 'patch', commit: 'C' }
+commitResponsible: 'C'
+commitBase: '~A' # SHA of A's **parent**, i.e. the commit before A (TODO: what does this mean for merge commits with 2 parents?)
+commitHead: 'C'
+json: "{ ... }" # stringified JSON object with all the above properties
 ```
 
 ### Outputs
@@ -70,6 +74,9 @@ changes: (stringified JSON object)
 - `type`: type of change (major, minor, patch, pre-release)
 - `changes`: array of changes (see below)
 - `changedFiles`: categorized list of changed files (see below)
+- `commitBase`: commit SHA of the base commit (previous head before pushing / merging new commits)
+- `commitHead`: commit SHA of the head commit
+- `json`: stringified JSON object with all the above properties
 
 > `oldVersion`, `newVersion` and `type` are only available if `changed` is "true".
 
