@@ -27,9 +27,7 @@ jobs:
       - run: pnpm build
 
       - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          file_pattern: dist
-          commit_message: '[auto] build: update compiled version'
-          add_options: '--force' # required because dist is listed in .gitignore
-          # push_options: --force # not sure if required?
+        run: |
+          git add --force dist # have to use --force because dist is in .gitignore
+          git commit -m "[auto] build: update compiled version"
+          git push
