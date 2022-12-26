@@ -9,7 +9,7 @@ inputs:
     default: package.json
   token:
     description: GitHub token used for authentication (you can use secrets.GITHUB_TOKEN)
-    required: true
+    required: false
 
 outputs:
   changed:

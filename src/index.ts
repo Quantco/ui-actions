@@ -39,10 +39,6 @@ const core = process.env.MOCKING ? coreMocked : coreDefault
 const packageJsonFile = normalize(core.getInput('file') || 'package.json')
 const token = core.getInput('token')
 
-if (!token) {
-  core.setFailed('No token provided, the action needs a token to be able to access the GitHub API (octokit)')
-}
-
 async function run(): Promise<VersionMetadataResponse> {
   // octokit is the GitHub API client
   // reference: https://octokit.github.io/rest.js/v19
