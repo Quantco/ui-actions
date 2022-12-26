@@ -1,10 +1,11 @@
-# Get Version
+# Version Metadata
 
 This GitHub action checks what the current version number in the package.json file (location can be specified) is, if it changed since the last check and which files were updated in the process.
 
 Using this you can easily automate publishing to a package registry such as NPM or [GPR](https://github.com/features/packages).
 
 This action only computes metadata and doesn't push git tags, publishes a package, creates github releases, etc.
+
 
 ## Usage
 
@@ -66,6 +67,7 @@ commitHead: 'C'
 json: "{ ... }" # stringified JSON object with all the above properties
 ```
 
+
 ### Outputs
 
 - `changed`: either "true" or "false", indicates whether the version has changed.
@@ -120,6 +122,7 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
   run: 'echo "Version has not changed"'
 ```
 
+
 ## Examples
 
 ```yaml
@@ -142,6 +145,20 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
   run: |
     echo "Changed files: ${{ fromJSON(steps.version.outputs.changedFiles).all }}"
 ```
+
+
+## Local testing
+
+In order to test this locally you can use the `test.sh` script.
+It sets a few environment variables which are used by `@actions/core` to mock the GitHub API.
+Change these variables to your liking.
+
+```
+export INPUT_TOKEN="<TOKEN>" && ./test.sh
+```
+
+The `MOCKING` environment variable is checked by `src/index.ts` to determine whether to use the mocked API or the real one.
+
 
 ## License
 
