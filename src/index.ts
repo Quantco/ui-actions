@@ -23,8 +23,6 @@ const coreMocked = {
 
 const core = process.env.MOCKING ? coreMocked : coreDefault
 
-// TODO: error handling and error messages
-
 type VersionDiffType = 'major' | 'minor' | 'patch' | 'pre-release'
 
 type CategorizedChangedFiles = {
@@ -134,7 +132,7 @@ const getSemverDiffType = (versionA: string, versionB: string): VersionDiffType 
   if (versionA === versionB) return 'equal'
 
   throw new Error(
-    `Could not determine the type of change between '${versionA}' and '${versionB}', this can usually not happen`
+    `Could not determine the type of change between '${versionA}' and '${versionB}', this should not happen`
   )
 }
 
@@ -220,7 +218,7 @@ const determineBaseAndHead = () => {
  */
 const deduplicateConsecutive =
   <T, E>(accessor: (input: T) => E) =>
-  (acc: { list: T[]; last: E }, curr: T) => {
+  (acc: { list: T[]; last: E | undefined }, curr: T) => {
     const value = accessor(curr)
     if (!value) return acc
     if (acc.last === value) return acc
@@ -335,9 +333,14 @@ async function run() {
   ).list
 
   const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(({ content, sha, git_url: gitUrl }) => {
-    if (!content) throw new Error(`content is undefined, this should not happen (${sha} / ${gitUrl})`)
-    const parsed = JSON.parse(Buffer.from(content, 'base64').toString()) // TODO: catch and rethrow with more context?
-    if (!parsed.version) throw new Error(`version is undefined, this should not happen (${sha} / ${gitUrl})`)
+    if (!content) throw new Error(`content is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`)
+    let parsed: { version?: string }
+    try {
+      parsed = JSON.parse(Buffer.from(content, 'base64').toString())
+    } catch (error) {
+      throw new Error(`Failed to parse JSON of package.json file (url: ${gitUrl}, sha: ${sha}, content: "${content}")`)
+    }
+    if (!parsed.version) throw new Error(`version is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`)
 
     return { version: parsed.version, sha }
   })
