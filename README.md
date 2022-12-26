@@ -104,13 +104,38 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
   id: version
   uses: Quantco/version-metadata@v1
 
-- name: Publish new version
-  if: steps.check.outputs.changed == 'true'
+- if: steps.check.outputs.changed == 'true'
   run: |
-    npm publish
-    echo "Published version ${{ steps.check.outputs.newVersion }}"
+    echo "New version is ${{ steps.check.outputs.newVersion }}"
     echo "Previous version was ${{ steps.check.outputs.oldVersion }}"
 
 - if: steps.check.outputs.changed == 'false'
-  run: 'echo "Skip publishing as the version has not changed"'
+  run: 'echo "Version has not changed"'
 ```
+
+## Examples
+
+```yaml
+# checkout, setup-node, etc. omitted
+
+- name: Check if version has been updated
+  id: version
+  uses: Quantco/version-metadata@v1
+
+# if version was manually incremented publish it
+- name: Publish to NPM
+  if: steps.version.outputs.changed == 'true'
+  run: |
+    npm publish
+  with:
+    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # needed for GitHub Package Registry, can omit otherwise
+
+# You can use this to determine if auto-incrementing the version and publishing is useful
+- name: Output changed files
+  run: |
+    echo "Changed files: ${{ fromJSON(steps.version.outputs.changedFiles).all }}"
+```
+
+## License
+
+This action is distributed under the MIT license, check the [license](LICENSE) for more info.
