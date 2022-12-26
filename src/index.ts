@@ -13,6 +13,11 @@ const coreMocked = {
       throw new Error(`Input required and not supplied: ${name}`)
     }
     return value
+  },
+  setOutput(name: string, value: string) {
+    // this is the deprecated format for saving outputs in actions using commands only
+    // just using it here to have some sort of consistent output format
+    console.log(`::set-output name=${name}::${value}`)
   }
 }
 
@@ -210,8 +215,8 @@ const determineBaseAndHead = () => {
  * possible to determine equality based on a property of the element instead of the element itself.
  *
  * @example
- * const arr = [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5]
- * const deduplicated = arr.reduce(deduplicateConsecutive((x) => x), { list: [], last: undefined }).list
+ * const arr = [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 1, 2]
+ * const deduplicated = arr.reduce(deduplicateConsecutive((x) => x), { list: [], last: undefined }).list // [1, 2, 3, 4, 5, 1, 2]
  */
 const deduplicateConsecutive =
   <T, E>(accessor: (input: T) => E) =>
@@ -257,8 +262,7 @@ async function run() {
   const changedFiles = commitDiff.data.files
 
   if (!changedFiles) {
-    core.setFailed('could not retrieve files changed in between base and head commits, aborting')
-    return
+    throw new Error('could not retrieve files changed in between base and head commits, aborting')
   }
 
   const all: string[] = []
@@ -301,8 +305,7 @@ async function run() {
   const failedRequests = maybeAllIterationsOfPackageJson.filter(({ response }) => response.status !== 200)
   if (failedRequests.length > 0) {
     const failedSHAs = failedRequests.map(({ sha }) => sha).join(', ')
-    core.setFailed(`could not retrieve all versions of "${packageJsonFile}" (${failedSHAs}), aborting`)
-    return
+    throw new Error(`could not retrieve all versions of "${packageJsonFile}" (${failedSHAs}), aborting`)
   }
 
   type NarrowedGetContentResponse = {
@@ -366,5 +369,22 @@ async function run() {
   return computeResponseFromChanges(changes, changedFilesCategorized, base, head)
 }
 
-// TODO: deal with output to github action
-run().then(console.log)
+run()
+  .then((response) => {
+    // common outputs shared by both responses with and without version changes
+    core.setOutput('changed', response.changed.toString())
+    core.setOutput('commitBase', response.commitBase)
+    core.setOutput('commitHead', response.commitHead)
+    core.setOutput('changedFiles', JSON.stringify(response.changedFiles))
+    core.setOutput('changes', JSON.stringify(response.changes))
+    core.setOutput('json', JSON.stringify(response))
+
+    // output only present if there are version changes
+    if (response.changed) {
+      core.setOutput('type', response.type)
+      core.setOutput('oldVersion', response.oldVersion)
+      core.setOutput('newVersion', response.newVersion)
+      core.setOutput('commitResponsible', response.commitResponsible)
+    }
+  })
+  .catch((error) => core.setFailed(error.message))
