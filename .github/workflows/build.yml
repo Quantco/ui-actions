@@ -1,0 +1,35 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "package.json"
+      - ".github/workflows/build.yml"
+
+jobs:
+  build:
+    name: Build and commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@c3b53f6a16e57305370b4ae5a540c2077a1d50dd
+        with:
+          version: 6.32.2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: pnpm
+
+      - run: pnpm install
+      - run: pnpm lint
+      - run: pnpm build
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          file_pattern: dist
+          commit_message: '[auto] build: update compiled version'
+          add_options: '--force' # required because dist is listed in .gitignore
+          # push_options: --force # not sure if required?
