@@ -15,5 +15,5 @@ jobs:
           cache: pnpm
 
       - run: pnpm install
-      - run: pnpm lint
-      - run: pnpm build
+      - run: pnpm --filter "*" lint
+      - run: pnpm --filter "*" build

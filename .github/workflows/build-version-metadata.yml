@@ -3,15 +3,14 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "src/**"
-      - "package.json"
-      - ".github/workflows/build.yml"
 
 jobs:
   build:
     name: Build and commit
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./version-metadata
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@c3b53f6a16e57305370b4ae5a540c2077a1d50dd
@@ -29,5 +28,5 @@ jobs:
       - name: Commit changes
         run: |
           git add --force dist # have to use --force because dist is in .gitignore
-          git commit -m "[auto] build: update compiled version"
+          git commit -m "[auto] build version-metadata: update compiled version"
           git push
