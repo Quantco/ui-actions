@@ -80,7 +80,7 @@ json: "{ ... }" # stringified JSON object with all the above properties
 - `commitHead`: commit SHA of the head commit
 - `json`: stringified JSON object with all the above properties
 
-> `oldVersion`, `newVersion` and `type` are only available if `changed` is "true".
+> `newVersion` and `type` are only available if `changed` is "true".
 
 `changedFiles` is an object with the following properties:
 

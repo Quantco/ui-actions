@@ -21,6 +21,7 @@ export type VersionMetadataResponse =
   | {
       /** Has the version changed since the last time the action was run? */
       changed: false
+      oldVersion: string
       /** commit SHA of the base commit (previous head before pushing / merging new commits) */
       commitBase: string
       /** commit SHA of the head commit */
@@ -116,13 +117,13 @@ const getSemverDiffType = (versionA: string, versionB: string): VersionDiffType 
 const computeResponseFromChanges = (
   changes: VersionChange[],
   changedFiles: CategorizedChangedFiles,
+  oldVersion: string,
   base: string,
   head: string
 ): VersionMetadataResponse => {
   if (changes.length === 0) {
-    return { changed: false, changes: [], changedFiles, commitBase: base, commitHead: head }
+    return { changed: false, oldVersion, changes: [], changedFiles, commitBase: base, commitHead: head }
   } else {
-    const oldVersion = changes[0].oldVersion
     const newVersion = changes[changes.length - 1].newVersion
     return {
       changed: true,

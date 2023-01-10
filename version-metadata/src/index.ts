@@ -131,6 +131,8 @@ async function run(): Promise<VersionMetadataResponse> {
     { list: [], last: undefined }
   ).list
 
+  const oldVersion = deduplicatedVersions[0].version
+
   // construct changes array from deduplicatedVersions
   // this works by going over the array and for each pair of consecutive versions constructing a VersionChange object
   const changes = deduplicatedVersions.reduce(
@@ -150,13 +152,14 @@ async function run(): Promise<VersionMetadataResponse> {
     { list: [] as VersionChange[], last: undefined as { version: string; sha: string } | undefined }
   ).list
 
-  return computeResponseFromChanges(changes, changedFilesCategorized, base, head)
+  return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base, head)
 }
 
 run()
   .then((response) => {
     // common outputs shared by both responses with and without version changes
     core.setOutput('changed', response.changed.toString())
+    core.setOutput('oldVersion', response.oldVersion)
     core.setOutput('commitBase', response.commitBase)
     core.setOutput('commitHead', response.commitHead)
     core.setOutput('changedFiles', JSON.stringify(response.changedFiles))
@@ -166,7 +169,6 @@ run()
     // output only present if there are version changes
     if (response.changed) {
       core.setOutput('type', response.type)
-      core.setOutput('oldVersion', response.oldVersion)
       core.setOutput('newVersion', response.newVersion)
       core.setOutput('commitResponsible', response.commitResponsible)
     }
