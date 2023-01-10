@@ -18,7 +18,7 @@ const versionMetadataJsonUnchangedSchema = z.object({
     added: z.array(z.string()),
     modified: z.array(z.string()),
     removed: z.array(z.string()),
-    renamed: z.array(z.object({ from: z.string(), to: z.string() }))
+    renamed: z.array(z.string())
   }),
   changes: z.array(z.never())
 })
@@ -36,7 +36,7 @@ const versionMetadataJsonChangedSchema = z.object({
     added: z.array(z.string()),
     modified: z.array(z.string()),
     removed: z.array(z.string()),
-    renamed: z.array(z.object({ from: z.string(), to: z.string() }))
+    renamed: z.array(z.string())
   }),
   changes: z.array(
     z.object({
