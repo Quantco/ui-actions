@@ -1,0 +1,35 @@
+name: Publish
+author: Jannik Wibker
+description: An action that decides if a new release should be published
+
+inputs:
+  increment-type:
+    description: The type of version increment to use when publishing, currenlty only "pre-release" is supported
+    default: preRelease
+  relevant-files:
+    description: A stringified json array of file globs which classify files as relevant or not relevant, e.g. '[".github/**", "lib/**", "package.json"]'
+    required: true
+  package-json-file-path:
+    description: File path to relevant package.json file
+    default: 'package.json'
+  latest-registry-version:
+    description: The latest published version of the package to the registry (npm, gpr, etc.)
+    required: true
+  version-metadata-json:
+    description: The JSON output of the version-metadata action
+    required: true
+
+outputs:
+  publish:
+    description: whether or not to publish
+  version:
+    description: version to publish
+  summary:
+    description: actions summary detailing why a publish was triggered
+
+runs:
+  using: node16
+  main: 'dist/index.js'
+branding:
+  icon: package
+  color: purple

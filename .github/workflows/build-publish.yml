@@ -1,0 +1,34 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and commit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./publish
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@c3b53f6a16e57305370b4ae5a540c2077a1d50dd
+        with:
+          version: 6.32.2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: pnpm
+
+      - run: pnpm install
+      - run: pnpm lint
+      - run: pnpm build
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add --force dist # have to use --force because dist is in .gitignore
+          git commit -m "[auto] build publish: update compiled version"
+          git push
