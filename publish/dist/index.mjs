@@ -51,7 +51,7 @@ Thus a new version was published.
   const template = (innerText) => `
 # publish
 
-<sup>This action checks if the version number has been updated in the repository and gathers a bit of metadata. Visit [version-metadata](https://github.com/Quantco/version-metadata) to get started.</sup>
+<sup>This action checks if the version number has been updated in the repository and gathers a bit of metadata. Visit [ui-actions](https://github.com/Quantco/ui-actions) to get started.</sup>
 
 ${innerText}
 
