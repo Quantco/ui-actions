@@ -17,4 +17,4 @@ export INPUT_VERSION_METADATA_JSON="${json}"
 
 # you'll likely have to supply a token using `INPUT_TOKEN`, can be done when calling `./test.sh`
 
-node dist/index.mjs
+node dist/index.js

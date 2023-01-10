@@ -7,7 +7,10 @@ export default defineConfig({
   dts: false,
   clean: true,
   target: 'es2020',
-  format: ['esm'], // TODO: does gha require cjs?
+  // using cjs instead of mjs here, because bundling dependencies doesn't work properly otherwise
+  format: ['cjs'],
   sourcemap: true,
-  minify: false
+  minify: false,
+  // have to bundle dependencies because they aren't available otherwise when run inside the action
+  noExternal: ['@actions/core', '@actions/github', 'multimatch', 'zod']
 })

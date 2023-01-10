@@ -28,4 +28,4 @@ cat <<EOF > ./payload.json
 }
 EOF
 
-node dist/index.mjs
+node dist/index.js
