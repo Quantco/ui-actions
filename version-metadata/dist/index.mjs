@@ -31,11 +31,10 @@ var getSemverDiffType = (versionA, versionB) => {
     `Could not determine the type of change between '${versionA}' and '${versionB}', this should not happen`
   );
 };
-var computeResponseFromChanges = (changes, changedFiles, base, head) => {
+var computeResponseFromChanges = (changes, changedFiles, oldVersion, base, head) => {
   if (changes.length === 0) {
-    return { changed: false, changes: [], changedFiles, commitBase: base, commitHead: head };
+    return { changed: false, oldVersion, changes: [], changedFiles, commitBase: base, commitHead: head };
   } else {
-    const oldVersion = changes[0].oldVersion;
     const newVersion = changes[changes.length - 1].newVersion;
     return {
       changed: true,
@@ -115,7 +114,7 @@ var coreMocked = {
     process.exit(1);
   },
   getInput: (name) => {
-    const value = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`];
+    const value = process.env[`INPUT_${name.replace(/-/g, "_").toUpperCase()}`];
     if (value === void 0) {
       throw new Error(`Input required and not supplied: ${name}`);
     }
@@ -178,6 +177,7 @@ async function run() {
     deduplicateConsecutive((x) => x.version),
     { list: [], last: void 0 }
   ).list;
+  const oldVersion = deduplicatedVersions[0].version;
   const changes = deduplicatedVersions.reduce(
     (acc, curr, index) => {
       if (index === 0)
@@ -194,10 +194,11 @@ async function run() {
     },
     { list: [], last: void 0 }
   ).list;
-  return computeResponseFromChanges(changes, changedFilesCategorized, base, head);
+  return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base, head);
 }
 run().then((response) => {
   core.setOutput("changed", response.changed.toString());
+  core.setOutput("oldVersion", response.oldVersion);
   core.setOutput("commitBase", response.commitBase);
   core.setOutput("commitHead", response.commitHead);
   core.setOutput("changedFiles", JSON.stringify(response.changedFiles));
@@ -205,7 +206,6 @@ run().then((response) => {
   core.setOutput("json", JSON.stringify(response));
   if (response.changed) {
     core.setOutput("type", response.type);
-    core.setOutput("oldVersion", response.oldVersion);
     core.setOutput("newVersion", response.newVersion);
     core.setOutput("commitResponsible", response.commitResponsible);
   }
