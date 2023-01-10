@@ -18,7 +18,7 @@ const coreMocked = {
     process.exit(1)
   },
   getInput: (name: string) => {
-    const value = process.env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`]
+    const value = process.env[`INPUT_${name.replace(/-/g, '_').toUpperCase()}`]
     if (value === undefined) {
       throw new Error(`Input required and not supplied: ${name}`)
     }

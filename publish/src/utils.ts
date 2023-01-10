@@ -99,7 +99,7 @@ ${innerText}
 `
     // decide which one to use
     const reason =
-      oldVersion === newVersion ? (didAutoIncrement ? newVersionAutoDetected : newVersionManuallySet) : noNewVersion
+      oldVersion === newVersion ? noNewVersion : didAutoIncrement ? newVersionAutoDetected : newVersionManuallySet
 
     return template(reason)
   }

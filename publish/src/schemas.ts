@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-const semverSchema = z.string().refine((value) => value.match(/^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))$/))
+const semverSchema = z.string().refine((value) => /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(value))
 const semverDiffTypeSchema = z.enum(['major', 'minor', 'patch', 'pre-release'])
 
 const incrementTypeSchema = z.enum(['pre-release'])
