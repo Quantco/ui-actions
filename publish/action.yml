@@ -24,7 +24,7 @@ outputs:
     description: whether or not to publish
   version:
     description: version to publish
-  summary:
+  reason:
     description: actions summary detailing why a publish was triggered
 
 runs:

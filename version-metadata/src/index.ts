@@ -24,7 +24,7 @@ const coreMocked = {
     }
     return value
   },
-  setOutput(name: string, value: string) {
+  setOutput(name: string, value: string | number | boolean) {
     // this is the deprecated format for saving outputs in actions using commands only
     // just using it here to have some sort of consistent output format
     console.log(`::set-output name=${name}::${value}`)

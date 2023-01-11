@@ -46,7 +46,7 @@ const summary =
 
   <br />
 
-  ${relevantFiles.map((file) => `- ${file}`).join('\n')}
+  ${relevantFiles.map((file) => `- ${file}`).join('\n  ')}
 
   <sup>What is considered a relevant change? Anything that matches any of the following file globs:</sup><br />
   <sup>${relevantFilesGlobs.map((fileGlob) => `\`${fileGlob}\``).join(', ')}</sup>
