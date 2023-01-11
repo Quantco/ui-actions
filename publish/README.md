@@ -8,7 +8,7 @@ There are examples below showing exactly how this is done.
 
 The decision is made using the following procedure:
 
-![Decision tree](./decision-tree.svg)
+![Decision tree](images/decision-tree.svg)
 
 ## Usage
 
@@ -20,6 +20,7 @@ The decision is made using the following procedure:
 
   with:
     # type of "increment" to use to auto-increment the version
+    # currently only 'pre-release' is supported
     increment-type: pre-release
     relevant-files: '[".github/**", "lib/**"]'
     # this is the same path as the one used in version-metadata, it's only used to have a proper summary at the end, not essential to the execution flow of the action
@@ -31,6 +32,59 @@ The decision is made using the following procedure:
     # you can of course replace version-metadata with differernt action but it needs to have the same data structure
     version-metadata-json: ${{ steps.version-metadata.outputs.json }}
 ```
+
+Let's look at the 3 following situations
+
+![case 1](images/case-1.svg)
+
+<details>
+  <summary>Written description of case 1</summary>
+  Let's assume you just merged a pull request into main in which you did the following things:
+
+  - commit A
+    - increment version from `1.2.2` to `1.2.3`
+    - change 3 files in `lib/src/`
+  - commit B
+    - change 2 files in `lib/src`
+  - commit C
+    - increment version from `1.2.3` to `1.2.4`
+    - change 3 files in `lib/src/`
+
+  Version in `lib/package.json` was updated from \`1.2.2\` to \`1.2.4\`.
+  Thus a new version was published
+</details>
+
+![case 2](./case-2.svg)
+
+<details>
+  <summary>Written description of case 2</summary>
+
+  Let's assume you just merged a pull request into main in which you did the following things:
+
+  - commit A
+    - change 3 files in `lib/src`
+  - commit B
+    - change 2 files in `demo/src`
+  - commit C
+    - change 3 files in `lib/src/`
+
+  Relevant files were changed which resulted in a version bump from \`1.2.2\` to \`1.2.2-0\`
+</details>
+
+![case 3](images/case-3.svg)
+
+<details>
+  <summary>Written description of case 3</summary>
+  
+  Let's assume you just merged a pull request into main in which you did the following things:
+
+  - commit A
+    - change 3 files in `demo/src`
+  - commit B
+    - change `.gitignore` and `readme.md`
+
+  No relevant changes were made since the last time.
+</details>
 
 ### Outputs
 
