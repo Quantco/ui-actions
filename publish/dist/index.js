@@ -9205,7 +9205,7 @@ var summary = ({ owner, repo, base, head }, packageJsonFilePath2, relevantFilesG
 
   <br />
 
-  ${relevantFiles.map((file) => `- ${file}`).join("\n")}
+  ${relevantFiles.map((file) => `- ${file}`).join("\n  ")}
 
   <sup>What is considered a relevant change? Anything that matches any of the following file globs:</sup><br />
   <sup>${relevantFilesGlobs2.map((fileGlob) => `\`${fileGlob}\``).join(", ")}</sup>
@@ -12477,7 +12477,7 @@ var run = () => {
 };
 try {
   const { publish, version, reason } = run();
-  core.setOutput("publish", String(publish));
+  core.setOutput("publish", publish);
   if (version) {
     core.setOutput("version", version);
   }
