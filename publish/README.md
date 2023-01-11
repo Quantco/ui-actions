@@ -33,7 +33,18 @@ The decision is made using the following procedure:
     version-metadata-json: ${{ steps.version-metadata.outputs.json }}
 ```
 
-Let's look at the 3 following situations
+### Outputs
+
+- `publish`: `true` if the package should be published, `false` otherwise.
+- `version`: the version that should be published
+- `reason`: a markdown summary of why what decision was made (made for action summaries)
+
+`version` is omitted if `publish` is false.
+`reason` is always present.
+
+### Situations
+
+Let's look at the 3 following situations and what each results in
 
 ![case 1](images/case-1.svg)
 
@@ -85,15 +96,6 @@ Let's look at the 3 following situations
 
   No relevant changes were made since the last time.
 </details>
-
-### Outputs
-
-- `publish`: `true` if the package should be published, `false` otherwise.
-- `version`: the version that should be published
-- `reason`: a markdown summary of why what decision was made (made for action summaries)
-
-`version` is omitted if `publish` is false.
-`reason` is always present.
 
 ### Example
 
