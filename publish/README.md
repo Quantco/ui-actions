@@ -54,7 +54,7 @@ Let's look at the 3 following situations
   Thus a new version was published
 </details>
 
-![case 2](./case-2.svg)
+![case 2](images/case-2.svg)
 
 <details>
   <summary>Written description of case 2</summary>
