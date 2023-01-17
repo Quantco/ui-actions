@@ -3,7 +3,7 @@ import * as z from 'zod'
 const semverSchema = z.string().refine((value) => /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(value))
 const semverDiffTypeSchema = z.enum(['major', 'minor', 'patch', 'pre-release'])
 
-const incrementTypeSchema = z.enum(['pre-release'])
+const incrementTypeSchema = z.enum(['pre-release', 'patch', 'minor', 'major'])
 const relevantFilesSchema = z.array(z.string())
 const packageJsonFilePathSchema = z.string()
 const latestRegistryVersionSchema = semverSchema

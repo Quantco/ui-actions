@@ -20,7 +20,7 @@ The decision is made using the following procedure:
 
   with:
     # type of "increment" to use to auto-increment the version
-    # currently only 'pre-release' is supported
+    # currently 'pre-release', 'patch', 'minor' and 'major' are supported, default is 'pre-release'
     increment-type: pre-release
     relevant-files: '[".github/**", "lib/**"]'
     # this is the same path as the one used in version-metadata, it's only used to have a proper summary at the end, not essential to the execution flow of the action

@@ -4,8 +4,8 @@ description: An action that decides if a new release should be published
 
 inputs:
   increment-type:
-    description: The type of version increment to use when publishing, currenlty only "pre-release" is supported
-    default: preRelease
+    description: The type of version increment to use when publishing, 'pre-release', 'patch', 'minor' and 'major' are supported
+    default: pre-release
   relevant-files:
     description: A stringified json array of file globs which classify files as relevant or not relevant, e.g. '[".github/**", "lib/**", "package.json"]'
     required: true

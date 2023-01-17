@@ -1,14 +1,41 @@
 import type { VersionMetadataResponse } from './schemas'
 
-const incrementPreRelease = ([major, minor, patch, preRelease]: [string, string, string, number | undefined]): string =>
-  `${major}.${minor}.${patch}-${preRelease !== undefined ? preRelease + 1 : 0}`
+type ParsedVersion = [number, number, number, number | undefined]
 
-const incrementVersion = (version: string, type: 'pre-release') => {
-  const [major, minor, maybePatch] = version.split('.')
+// if pre-release is already present increment it
+// if not, increment patch and add pre-release (defaulting to "-0")
+const incrementPreRelease = ([major, minor, patch, preRelease]: ParsedVersion): string => {
+  if (preRelease === undefined) {
+    return `${major}.${minor}.${patch + 1}-${0}`
+  } else {
+    return `${major}.${minor}.${patch}-${preRelease + 1}`
+  }
+}
+
+// increment patch and reset pre-release (empty by default, not adding a "-0")
+const incrementPatch = ([major, minor, patch]: ParsedVersion): string => `${major}.${minor}.${patch + 1}`
+
+// increment minor and reset patch (to "0") and pre-release (empty by default, not adding a "-0")
+const incrementMinor = ([major, minor]: ParsedVersion): string => `${major}.${minor + 1}.0`
+
+// increment major and reset minor (to "0"), patch (to "0") and pre-release (empty by default, not adding a "-0")
+const incrementMajor = ([major]: ParsedVersion): string => `${major + 1}.0.0`
+
+const incrementVersion = (version: string, type: 'pre-release' | 'patch' | 'minor' | 'major') => {
+  // we assume that the version is valid, this means that it has the following format:
+  // {number}.{number}.{number}
+  // -- OR --
+  // {number}.{number}.{number}-{number}
+  //
+  // this is a subset of semver, things such as "-beta" or "-rc.1" are not supported
+  const [majorS, minorS, maybePatch] = version.split('.')
+
+  const major = parseInt(majorS)
+  const minor = parseInt(minorS)
 
   const [patch, preRelease] = maybePatch.includes('-')
-    ? [maybePatch.split('-')[0], parseInt(maybePatch.split('-')[1])]
-    : [maybePatch, undefined]
+    ? [parseInt(maybePatch.split('-')[0]), parseInt(maybePatch.split('-')[1])]
+    : [parseInt(maybePatch), undefined]
 
   if (Number.isNaN(preRelease)) {
     throw new Error(`Could not increment version ${version}, pre release should be a number`)
@@ -18,6 +45,12 @@ const incrementVersion = (version: string, type: 'pre-release') => {
   switch (type) {
     case 'pre-release':
       return incrementPreRelease([major, minor, patch, preRelease])
+    case 'patch':
+      return incrementPatch([major, minor, patch, preRelease])
+    case 'minor':
+      return incrementMinor([major, minor, patch, preRelease])
+    case 'major':
+      return incrementMajor([major, minor, patch, preRelease])
     default:
       throw new Error(`Unknown increment type "${type}"`)
   }
