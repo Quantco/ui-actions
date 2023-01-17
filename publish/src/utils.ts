@@ -125,9 +125,9 @@ ${innerText}
 
 <sup>
   Compared
-  [\`${base.substring(0, 6)}\`](https://github.com/${owner}/${repo}/commit/${base}) (base)
+  <a href="https://github.com/${owner}/${repo}/commit/${base}"><code>${base.substring(0, 6)}</code></a> (base)
   with
-  [\`${head.substring(0, 6)}\`](https://github.com/${owner}/${repo}/commit/${head}) (head)
+  <a href="https://github.com/${owner}/${repo}/commit/${head}"><code>${head.substring(0, 6)}</code></a> (head)
 </sup>
 `
     // decide which one to use
