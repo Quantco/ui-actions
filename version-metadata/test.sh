@@ -3,8 +3,11 @@
 export MOCKING=1
 export GITHUB_REPOSITORY="Quantco/ui-components"
 export GITHUB_EVENT_NAME="pull_request" # can also be "push"
+# for the base this should be an actual SHA as this is value is compared to commit SHAs
+# using "main" or something similar might break certain things
+# shortened SHAs are fine though
 export GITHUB_BASE="929f3d044ac9a8a7be8e8b0d267942ca38ba95a0"
-export GITHUB_HEAD="main" # preferably a SHA as github provides those
+export GITHUB_HEAD="main"
 export GITHUB_EVENT_PATH="./payload.json" # we create a payload.json file which is then read by `@actions/core` using this env var
 export INPUT_FILE="./lib/package.json" # maps to `file` input in action.yml
 

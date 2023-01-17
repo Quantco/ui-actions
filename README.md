@@ -14,7 +14,7 @@ Nevertheless here's a minimal example of these actions in use.
 
 ```yaml
 - id: version-metadata
-  uses: Quantco/ui-actions/version-metadata@v1.0.3
+  uses: Quantco/ui-actions/version-metadata@v1
   with:
     file: lib/package.json
     token: ${{ secrets.GITHUB_TOKEN }}
@@ -27,7 +27,7 @@ Nevertheless here's a minimal example of these actions in use.
 
   
 - id: publish
-  uses: Quantco/ui-actions/publish@v1.0.3
+  uses: Quantco/ui-actions/publish@v1
   with:
     increment-type: pre-release
     relevant-files: '[".github/**", "lib/**"]'

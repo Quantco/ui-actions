@@ -16,7 +16,7 @@ The decision is made using the following procedure:
 
 ```yaml
 - id: publish # This will be the reference for getting the outputs later on.
-  uses: Quantco/ui-actions/publish@v1.0.3
+  uses: Quantco/ui-actions/publish@v1
 
   with:
     # type of "increment" to use to auto-increment the version
@@ -107,7 +107,7 @@ Be sure to replace `<YOUR PACKAGE NAME>` with your own package.
 # checkout, setup-node, etc. omitted
 
 - id: version-metadata
-  uses: Quantco/ui-actions/version-metadata@v1.0.3
+  uses: Quantco/ui-actions/version-metadata@v1
   with:
     file: lib/package.json
     token: ${{ secrets.GITHUB_TOKEN }}
@@ -121,7 +121,7 @@ Be sure to replace `<YOUR PACKAGE NAME>` with your own package.
 
   
 - id: publish
-  uses: Quantco/ui-actions/publish@v1.0.3
+  uses: Quantco/ui-actions/publish@v1
   with:
     increment-type: pre-release
     relevant-files: '[".github/**", "lib/**"]'

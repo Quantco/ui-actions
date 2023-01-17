@@ -15,7 +15,7 @@ You have to set up a step like this in your workflow (this assumes you've alread
 
 ```yaml
 - id: version # This will be the reference for getting the outputs.
-  uses: Quantco/ui-actions/version-metadata@v1.0.3 # You can choose the version/branch you prefer.
+  uses: Quantco/ui-actions/version-metadata@v1 # You can choose the version/branch you prefer.
 
   with:
     # You can use this to indicate a custom path to your `package.json`. If you keep
@@ -111,7 +111,7 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
 ```yaml
 - name: Check if version has been updated
   id: version
-  uses: Quantco/ui-actions/version-metadata@v1.0.3
+  uses: Quantco/ui-actions/version-metadata@v1
 
 - if: steps.check.outputs.changed == 'true'
   run: |
@@ -130,7 +130,7 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
 
 - name: Check if version has been updated
   id: version
-  uses: Quantco/ui-actions/version-metadata@v1.0.3
+  uses: Quantco/ui-actions/version-metadata@v1
 
 # if version was manually incremented publish it
 - name: Publish to NPM
