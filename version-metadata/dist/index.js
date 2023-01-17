@@ -8471,7 +8471,8 @@ async function run() {
     throw new Error("could not retrieve files changed in between base and head commits, aborting");
   }
   const changedFilesCategorized = categorizeChangedFiles(changedFiles);
-  const commits = commitDiff.data.commits.filter((commit) => commit.parents.length === 1);
+  const unfilteredCommits = [commitDiff.data.base_commit, ...commitDiff.data.commits];
+  const commits = unfilteredCommits.filter((commit) => commit.parents.length === 1 || commit.sha.startsWith(base));
   const maybeAllIterationsOfPackageJson = await Promise.all(
     commits.map(
       (commit) => octokit.rest.repos.getContent({ owner: import_github.context.repo.owner, repo: import_github.context.repo.repo, path: packageJsonFile, ref: commit.sha }).then((response) => ({ sha: commit.sha, response }))
