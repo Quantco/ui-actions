@@ -153,11 +153,16 @@ In order to test this locally you can use the `test.sh` script.
 It sets a few environment variables which are used by `@actions/core` to mock the GitHub API.
 Change these variables to your liking.
 
-```
-export INPUT_TOKEN="<TOKEN>" && ./test.sh
+```sh
+INPUT_TOKEN="<TOKEN>" ./test.sh
 ```
 
 The `MOCKING` environment variable is checked by `src/index.ts` to determine whether to use the mocked API or the real one.
+
+> **Hint**: if you just want to see the json output you can use
+> ```sh
+> INPUT_TOKEN="<TOKEN>" ./test.sh | grep -o '^::set-output name=json::.*$' | sed 's/::set-output name=json:://g' | jq
+> ```
 
 
 ## License

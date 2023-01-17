@@ -26,6 +26,8 @@ outputs:
     description: version to publish
   reason:
     description: actions summary detailing why a publish was triggered
+  json:
+    description: all of the above as stringified JSON
 
 runs:
   using: node16

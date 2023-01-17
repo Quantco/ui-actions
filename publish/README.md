@@ -38,6 +38,7 @@ The decision is made using the following procedure:
 - `publish`: `'true'` if the package should be published, `'false'` otherwise. Note that this is a stringified boolean instead of a boolean.
 - `version`: the version that should be published
 - `reason`: a markdown summary of why what decision was made (made for action summaries)
+- `json`: stringified JSON object with all the above properties
 
 `version` is omitted if `publish` is false.
 `reason` is always present.
@@ -153,13 +154,19 @@ In order to test this locally you can use the `test.sh` script.
 It sets a few environment variables which are used by `@actions/core` to mock the GitHub API.
 Change these variables to your liking.
 
-```
-export INPUT_TOKEN="<TOKEN>" && ./test.sh
+```sh
+INPUT_TOKEN="<TOKEN>" ./test.sh
 ```
 
 The `publish/test.sh` script calls the `version-metadata/test.sh` script, that's why the token is needed even though the action itself doesns't need it.
 
 The `MOCKING` environment variable is checked by `src/index.ts` to determine whether to use the mocked API or the real one.
+
+
+> **Hint**: if you just want to see the json output you can use
+> ```sh
+> INPUT_TOKEN="<TOKEN>" ./test.sh | grep -o '^::set-output name=json::.*$' | sed 's/::set-output name=json:://g' | jq
+> ```
 
 ## License
 

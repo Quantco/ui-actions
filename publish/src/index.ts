@@ -89,6 +89,8 @@ try {
     core.setOutput('version', version)
   }
   core.setOutput('reason', reason)
+
+  core.setOutput('json', JSON.stringify({ publish, version, reason }))
 } catch (error: any) {
   core.setFailed(error.message)
 }
