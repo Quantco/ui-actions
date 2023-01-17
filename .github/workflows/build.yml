@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - tag-action
 
 jobs:
   commit-version-metadata:
@@ -70,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: Quantco/ui-actions/version-metadata@v1
+      - uses: Quantco/ui-actions/version-metadata@fab1ae8578aa96e153821d4927b8e27975860570
         id: version-metadata
         with:
           # the version of both actions should be kept in sync
@@ -79,13 +80,14 @@ jobs:
           # TODO: remove this when the repo is public
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: Quantco/ui-actions/version-metadata@v1
+      - uses: Quantco/ui-actions/version-metadata@fab1ae8578aa96e153821d4927b8e27975860570
         id: version-metadata-sanity-check
         with:
           file: publish/package.json
           # TODO: remove this when the repo is public
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # TODO: obviously this is not the best way to do this, add a "currentVersion" output to the action
       #     a.changed && !b.changed && (a.newVersion != b.oldVersion)
       # ||  b.changed && !b.changed && (b.newVersion != a.oldVersion)
       # ||  a.changed &&  b.changed && (a.newVersion != b.oldVersion)
