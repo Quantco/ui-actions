@@ -36,7 +36,7 @@ Nevertheless here's a minimal example of these actions in use.
     version-metadata-json: ${{ steps.version-metadata.outputs.json }}
 
 - name: publish npm package
-  if: steps.publish.outputs.publish == true
+  if: steps.publish.outputs.publish == 'true'
   run: |
     echo "Publishing version ${{ steps.publish.outputs.version }}"
     npm version --git-tag-version false --allow-same-version true ${{ steps.publish.outputs.version }}

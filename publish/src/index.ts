@@ -24,7 +24,8 @@ const coreMocked = {
     }
     return value
   },
-  setOutput(name: string, value: string | number | boolean) {
+  // github internally just calls toString on everything, this can lead to confusion, therefore just accepting strings here outright
+  setOutput(name: string, value: string) {
     // this is the deprecated format for saving outputs in actions using commands only
     // just using it here to have some sort of consistent output format
     console.log(`::set-output name=${name}::${value}`)
@@ -83,7 +84,7 @@ const run = () => {
 try {
   const { publish, version, reason } = run()
 
-  core.setOutput('publish', publish)
+  core.setOutput('publish', String(publish))
   if (version) {
     core.setOutput('version', version)
   }

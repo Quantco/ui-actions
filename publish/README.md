@@ -35,7 +35,7 @@ The decision is made using the following procedure:
 
 ### Outputs
 
-- `publish`: `true` if the package should be published, `false` otherwise.
+- `publish`: `'true'` if the package should be published, `'false'` otherwise. Note that this is a stringified boolean instead of a boolean.
 - `version`: the version that should be published
 - `reason`: a markdown summary of why what decision was made (made for action summaries)
 
@@ -129,7 +129,8 @@ Be sure to replace `<YOUR PACKAGE NAME>` with your own package.
     version-metadata-json: ${{ steps.version-metadata.outputs.json }}
 
 - name: publish npm package
-  if: steps.publish.outputs.publish == true
+  # github converts everything to strings when returned as an output, therefore you'll have to check against 'true' instead of true
+  if: steps.publish.outputs.publish == 'true'
   # this is called for both manually and auto incremented version changes
   # therefore you'll want to allow supplying the same option as the file already contains (--allow-same-version true)
   run: |
