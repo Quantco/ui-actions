@@ -9182,16 +9182,33 @@ function multimatch(list, patterns, options = {}) {
 }
 
 // src/utils.ts
-var incrementPreRelease = ([major, minor, patch, preRelease]) => `${major}.${minor}.${patch}-${preRelease !== void 0 ? preRelease + 1 : 0}`;
+var incrementPreRelease = ([major, minor, patch, preRelease]) => {
+  if (preRelease === void 0) {
+    return `${major}.${minor}.${patch + 1}-${0}`;
+  } else {
+    return `${major}.${minor}.${patch}-${preRelease + 1}`;
+  }
+};
+var incrementPatch = ([major, minor, patch]) => `${major}.${minor}.${patch + 1}`;
+var incrementMinor = ([major, minor]) => `${major}.${minor + 1}.0`;
+var incrementMajor = ([major]) => `${major + 1}.0.0`;
 var incrementVersion = (version, type) => {
-  const [major, minor, maybePatch] = version.split(".");
-  const [patch, preRelease] = maybePatch.includes("-") ? [maybePatch.split("-")[0], parseInt(maybePatch.split("-")[1])] : [maybePatch, void 0];
+  const [majorS, minorS, maybePatch] = version.split(".");
+  const major = parseInt(majorS);
+  const minor = parseInt(minorS);
+  const [patch, preRelease] = maybePatch.includes("-") ? [parseInt(maybePatch.split("-")[0]), parseInt(maybePatch.split("-")[1])] : [parseInt(maybePatch), void 0];
   if (Number.isNaN(preRelease)) {
     throw new Error(`Could not increment version ${version}, pre release should be a number`);
   }
   switch (type) {
     case "pre-release":
       return incrementPreRelease([major, minor, patch, preRelease]);
+    case "patch":
+      return incrementPatch([major, minor, patch, preRelease]);
+    case "minor":
+      return incrementMinor([major, minor, patch, preRelease]);
+    case "major":
+      return incrementMajor([major, minor, patch, preRelease]);
     default:
       throw new Error(`Unknown increment type "${type}"`);
   }
@@ -9243,9 +9260,9 @@ ${innerText}
 
 <sup>
   Compared
-  [\`${base.substring(0, 6)}\`](https://github.com/${owner}/${repo}/commit/${base}) (base)
+  <a href="https://github.com/${owner}/${repo}/commit/${base}"><code>${base.substring(0, 6)}</code></a> (base)
   with
-  [\`${head.substring(0, 6)}\`](https://github.com/${owner}/${repo}/commit/${head}) (head)
+  <a href="https://github.com/${owner}/${repo}/commit/${head}"><code>${head.substring(0, 6)}</code></a> (head)
 </sup>
 `;
   const reason = oldVersion === newVersion ? noNewVersion : didAutoIncrement ? newVersionAutoDetected : newVersionManuallySet;
@@ -12376,7 +12393,7 @@ var pipelineType = ZodPipeline.create;
 // src/schemas.ts
 var semverSchema = stringType().refine((value) => /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(value));
 var semverDiffTypeSchema = enumType(["major", "minor", "patch", "pre-release"]);
-var incrementTypeSchema = enumType(["pre-release"]);
+var incrementTypeSchema = enumType(["pre-release", "patch", "minor", "major"]);
 var relevantFilesSchema = arrayType(stringType());
 var packageJsonFilePathSchema = stringType();
 var latestRegistryVersionSchema = semverSchema;
@@ -12477,11 +12494,12 @@ var run = () => {
 };
 try {
   const { publish, version, reason } = run();
-  core.setOutput("publish", publish);
+  core.setOutput("publish", String(publish));
   if (version) {
     core.setOutput("version", version);
   }
   core.setOutput("reason", reason);
+  core.setOutput("json", JSON.stringify({ publish, version, reason }));
 } catch (error) {
   core.setFailed(error.message);
 }
