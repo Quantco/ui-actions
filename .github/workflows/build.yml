@@ -8,7 +8,6 @@ jobs:
   commit-version-metadata:
     name: Commit changes of version-metadata build output
     runs-on: ubuntu-latest
-    needs: [build]
     defaults:
       run:
         working-directory: version-metadata
@@ -38,7 +37,6 @@ jobs:
   commit-publish:
     name: Commit changes of publish build output
     runs-on: ubuntu-latest
-    needs: [build]
     defaults:
       run:
         working-directory: publish
