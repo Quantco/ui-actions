@@ -68,8 +68,13 @@ async function run(): Promise<VersionMetadataResponse> {
 
   const changedFilesCategorized = categorizeChangedFiles(changedFiles)
 
-  // filter merge commits as they disrupt the versioning logic (they contain all changes of the PR again)
-  const commits = commitDiff.data.commits.filter((commit) => commit.parents.length === 1)
+  // the base commit is not included in the usual list of commits, it is however provided separately
+  const unfilteredCommits = [commitDiff.data.base_commit, ...commitDiff.data.commits]
+
+  // filter merge commits as they disrupt the versioning logic (they contain all changes of the PR again), we still need to include the base commit regardless
+  // note: when doing local testing it might happen that shortened SHAs (or "main" / ..) are used, this is
+  // able to deal with shortened SHAs because of the `startsWith` check but not with other kinds of refs.
+  const commits = unfilteredCommits.filter((commit) => commit.parents.length === 1 || commit.sha.startsWith(base))
 
   // all versions of the package.json file in between the base and head commits
   // this has a lot of duplicates, as the file doesn't necessarily change in each commit

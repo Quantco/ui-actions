@@ -28,4 +28,5 @@ cat <<EOF > ./payload.json
 }
 EOF
 
+# add `--inspect-brk --enable-source-maps` to debug
 node dist/index.js
