@@ -113,12 +113,12 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
   id: version
   uses: Quantco/ui-actions/version-metadata@v1
 
-- if: steps.check.outputs.changed == 'true'
+- if: steps.version.outputs.changed == 'true'
   run: |
-    echo "New version is ${{ steps.check.outputs.newVersion }}"
-    echo "Previous version was ${{ steps.check.outputs.oldVersion }}"
+    echo "New version is ${{ steps.version.outputs.newVersion }}"
+    echo "Previous version was ${{ steps.version.outputs.oldVersion }}"
 
-- if: steps.check.outputs.changed == 'false'
+- if: steps.version.outputs.changed == 'false'
   run: 'echo "Version has not changed"'
 ```
 
