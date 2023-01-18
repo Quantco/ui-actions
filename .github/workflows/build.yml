@@ -120,8 +120,8 @@ jobs:
         run: |
           version="${{ steps.version-metadata.outputs.newVersion }}"
 
-          # git tag "debug-v${version}" # TODO remove the "debug-" prefix
-          # git push origin "debug-v${version}" # TODO remove the "debug-" prefix
+          git tag "debug-v${version}" # TODO remove the "debug-" prefix
+          git push origin "debug-v${version}" # TODO remove the "debug-" prefix
 
           echo "pushed v${version} tag" >> $GITHUB_STEP_SUMMARY
 
