@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - tag-action
+      - tag-action # TODO: remove when done testing
 
 jobs:
   commit-version-metadata:
@@ -120,9 +120,8 @@ jobs:
         run: |
           version="${{ steps.version-metadata.outputs.newVersion }}"
 
-          echo "would have pushed v${version} tag" # TODO
-          # git tag "v${version}"
-          # git push origin "v${version}"
+          # git tag "debug-v${version}" # TODO remove the "debug-" prefix
+          # git push origin "debug-v${version}" # TODO remove the "debug-" prefix
 
           echo "pushed v${version} tag" >> $GITHUB_STEP_SUMMARY
 
