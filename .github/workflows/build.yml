@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: Quantco/ui-actions/version-metadata@v1
+      - uses: Quantco/ui-actions/version-metadata@fab1ae8578aa96e153821d4927b8e27975860570
         id: version-metadata
         with:
           # the version of both actions should be kept in sync
@@ -79,21 +79,15 @@ jobs:
           # TODO: remove this when the repo is public
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: Quantco/ui-actions/version-metadata@v1
+      - uses: Quantco/ui-actions/version-metadata@fab1ae8578aa96e153821d4927b8e27975860570
         id: version-metadata-sanity-check
         with:
           file: publish/package.json
           # TODO: remove this when the repo is public
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      #     a.changed && !b.changed && (a.newVersion != b.oldVersion)
-      # ||  b.changed && !b.changed && (b.newVersion != a.oldVersion)
-      # ||  a.changed &&  b.changed && (a.newVersion != b.oldVersion)
-      # || !a.changed && !b.changed && (a.oldVersion != b.oldVersion)
-      # -- or in other words --
-      # if the latest version of a is different then b
       - name: Sanity version check
-        if: steps.version-metadata.outputs.changed && !steps.version-metadata-sanity-check.changed && (steps.version-metadata.outputs.newVersion != steps.version-metadata-sanity-check.oldVersion) || steps.version-metadata-sanity-check.changed && !steps.version-metadata.outputs.changed && (steps.version-metadata-sanity-check.newVersion != steps.version-metadata.outputs.oldVersion) || steps.version-metadata.outputs.changed && steps.version-metadata-sanity-check.changed && (steps.version-metadata.outputs.newVersion != steps.version-metadata-sanity-check.oldVersion) || !steps.version-metadata.outputs.changed && !steps.version-metadata-sanity-check.changed && (steps.version-metadata.outputs.oldVersion != steps.version-metadata-sanity-check.oldVersion)
+        if: steps.version-metadata.outputs.newVersion != steps.version-metadata-sanity-check.outputs.newVersion
         run: |
           echo "version-metadata and publish version do not match"
           
@@ -120,14 +114,16 @@ jobs:
           # pull auto build commits
           git pull
 
+          # fetch all tags
+          git fetch --tags
+
       - name: Push v(x.x.x) tag
         if: steps.version-metadata.outputs.changed == 'true'
         run: |
           version="${{ steps.version-metadata.outputs.newVersion }}"
 
-          echo "would have pushed v${version} tag" # TODO
-          # git tag "v${version}"
-          # git push origin "v${version}"
+          git tag "v${version}"
+          git push origin "v${version}"
 
           echo "pushed v${version} tag" >> $GITHUB_STEP_SUMMARY
 
@@ -139,15 +135,11 @@ jobs:
           major="${version%%.*}" # see https://www.linuxjournal.com/article/8919 for an explanation of this bash magic
 
           # delete the v(x) tag locally and on the remote
-          echo "would have deleted v${major} tag"
-          echo "would have deleted :refs/tags/v${major} tag on remote"
-          # git tag -d "v${major}"
-          # git push origin ":refs/tags/v${major}"
+          git tag -d "v${major}" || echo "couldn't delete tag v${major} locally, maybe it didn't exist before, continuing.."
+          git push origin ":refs/tags/v${major}" || echo "couldn't delete tag v${major} remotely, maybe it didn't exist before, continuing.."
 
-          echo "would have pushed v${major} tag" # TODO
-          echo "would have pushed v${major} tag to remote" # TODO
-          # git tag "v${major}"
-          # git push origin "v${major}"
+          git tag "v${major}"
+          git push origin "v${major}"
 
           echo "moved v${major} tag to v${version}" >> $GITHUB_STEP_SUMMARY
 
@@ -158,8 +150,6 @@ jobs:
           version="${{ steps.version-metadata.outputs.newVersion }}"
           major="${version%%.*}"
 
-          echo "would have pushed v${major} tag" # TODO
-          echo "would have pushed v${major} tag to remote" # TODO
           # git tag "v${major}"
           # git push origin "v${major}"
 

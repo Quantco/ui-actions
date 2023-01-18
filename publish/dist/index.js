@@ -12400,6 +12400,7 @@ var latestRegistryVersionSchema = semverSchema;
 var versionMetadataJsonUnchangedSchema = objectType({
   changed: literalType(false),
   oldVersion: semverSchema,
+  newVersion: semverSchema,
   commitBase: stringType(),
   commitHead: stringType(),
   changedFiles: objectType({

@@ -17,9 +17,9 @@ outputs:
   type:
     description: The type of version change ('major', 'minor', 'patch', 'pre-release')
   oldVersion:
-    description: Previous version number
+    description: Previous version number, current version if nothing changed
   newVersion:
-    description: New version number
+    description: New version number, current version if nothing changed
   commitResponsible:
     description: The SHA of the commit that last changed the version number
   commitBase: 

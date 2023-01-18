@@ -71,8 +71,8 @@ json: "{ ... }" # stringified JSON object with all the above properties
 ### Outputs
 
 - `changed`: either "true" or "false", indicates whether the version has changed.
-- `oldVersion`: version before changes
-- `newVersion`: version after changes
+- `oldVersion`: version before changes, current version if nothing changed
+- `newVersion`: version after changes, current version if nothing changed
 - `type`: type of change (major, minor, patch, pre-release)
 - `changes`: array of changes (see below)
 - `changedFiles`: categorized list of changed files (see below)
@@ -80,7 +80,7 @@ json: "{ ... }" # stringified JSON object with all the above properties
 - `commitHead`: commit SHA of the head commit
 - `json`: stringified JSON object with all the above properties
 
-> `newVersion` and `type` are only available if `changed` is "true".
+> `type` is only available if `changed` is "true".
 
 `changedFiles` is an object with the following properties:
 

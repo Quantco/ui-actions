@@ -8,7 +8,10 @@ There are examples below showing exactly how this is done.
 
 The decision is made using the following procedure:
 
-![Decision tree](images/decision-tree.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./images/decision-tree-dark.svg">
+  <img alt="Decision tree" src="./images/decision-tree.svg">
+</picture>
 
 ## Usage
 
@@ -47,7 +50,10 @@ The decision is made using the following procedure:
 
 Let's look at the 3 following situations and what each results in
 
-![case 1](images/case-1.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./images/case-1-dark.svg">
+  <img alt="case 1" src="./images/case-1.svg">
+</picture>
 
 <details>
   <summary>Written description of case 1</summary>
@@ -66,7 +72,10 @@ Let's look at the 3 following situations and what each results in
   Thus a new version was published
 </details>
 
-![case 2](images/case-2.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./images/case-2-dark.svg">
+  <img alt="case 2" src="./images/case-2.svg">
+</picture>
 
 <details>
   <summary>Written description of case 2</summary>
@@ -83,7 +92,10 @@ Let's look at the 3 following situations and what each results in
   Relevant files were changed which resulted in a version bump from \`1.2.2\` to \`1.2.2-0\`
 </details>
 
-![case 3](images/case-3.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./images/case-3-dark.svg">
+  <img alt="case 3" src="./images/case-3.svg">
+</picture>
 
 <details>
   <summary>Written description of case 3</summary>

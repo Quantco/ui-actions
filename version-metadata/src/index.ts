@@ -163,8 +163,9 @@ async function run(): Promise<VersionMetadataResponse> {
 run()
   .then((response) => {
     // common outputs shared by both responses with and without version changes
-    core.setOutput('changed', response.changed.toString())
+    core.setOutput('changed', String(response.changed))
     core.setOutput('oldVersion', response.oldVersion)
+    core.setOutput('newVersion', response.newVersion)
     core.setOutput('commitBase', response.commitBase)
     core.setOutput('commitHead', response.commitHead)
     core.setOutput('changedFiles', JSON.stringify(response.changedFiles))
@@ -174,7 +175,6 @@ run()
     // output only present if there are version changes
     if (response.changed) {
       core.setOutput('type', response.type)
-      core.setOutput('newVersion', response.newVersion)
       core.setOutput('commitResponsible', response.commitResponsible)
     }
   })

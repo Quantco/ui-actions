@@ -8363,7 +8363,15 @@ var getSemverDiffType = (versionA, versionB) => {
 };
 var computeResponseFromChanges = (changes, changedFiles, oldVersion, base, head) => {
   if (changes.length === 0) {
-    return { changed: false, oldVersion, changes: [], changedFiles, commitBase: base, commitHead: head };
+    return {
+      changed: false,
+      oldVersion,
+      newVersion: oldVersion,
+      changes: [],
+      changedFiles,
+      commitBase: base,
+      commitHead: head
+    };
   } else {
     const newVersion = changes[changes.length - 1].newVersion;
     return {
@@ -8528,8 +8536,9 @@ async function run() {
   return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base, head);
 }
 run().then((response) => {
-  core.setOutput("changed", response.changed.toString());
+  core.setOutput("changed", String(response.changed));
   core.setOutput("oldVersion", response.oldVersion);
+  core.setOutput("newVersion", response.newVersion);
   core.setOutput("commitBase", response.commitBase);
   core.setOutput("commitHead", response.commitHead);
   core.setOutput("changedFiles", JSON.stringify(response.changedFiles));
@@ -8537,7 +8546,6 @@ run().then((response) => {
   core.setOutput("json", JSON.stringify(response));
   if (response.changed) {
     core.setOutput("type", response.type);
-    core.setOutput("newVersion", response.newVersion);
     core.setOutput("commitResponsible", response.commitResponsible);
   }
 }).catch((error) => core.setFailed(error.message));
