@@ -133,15 +133,11 @@ jobs:
           major="${version%%.*}" # see https://www.linuxjournal.com/article/8919 for an explanation of this bash magic
 
           # delete the v(x) tag locally and on the remote
-          echo "would have deleted v${major} tag"
-          echo "would have deleted :refs/tags/v${major} tag on remote"
-          # git tag -d "v${major}"
-          # git push origin ":refs/tags/v${major}"
+          git tag -d "debug-v${major}" # TODO: remove the "debug-" prefix
+          git push origin ":refs/tags/debug-v${major}" # TODO: remove the "debug-" prefix
 
-          echo "would have pushed v${major} tag" # TODO
-          echo "would have pushed v${major} tag to remote" # TODO
-          # git tag "v${major}"
-          # git push origin "v${major}"
+          git tag "debug-v${major}" # TODO: remove the "debug-" prefix
+          git push origin "debug-v${major}" # TODO: remove the "debug-" prefix
 
           echo "moved v${major} tag to v${version}" >> $GITHUB_STEP_SUMMARY
 
@@ -152,10 +148,8 @@ jobs:
           version="${{ steps.version-metadata.outputs.newVersion }}"
           major="${version%%.*}"
 
-          echo "would have pushed v${major} tag" # TODO
-          echo "would have pushed v${major} tag to remote" # TODO
-          # git tag "v${major}"
-          # git push origin "v${major}"
+          # git tag "debug-v${major}" # TODO: remove the "debug-" prefix
+          # git push origin "debug-v${major}" # TODO: remove the "debug-" prefix
 
           echo "pushed v${major} tag" >> $GITHUB_STEP_SUMMARY
 
