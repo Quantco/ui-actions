@@ -1,6 +1,6 @@
 {
   "name": "version-metadata",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "An action that checks wether your package.json version has been updated with a bit of additional metadata",
   "scripts": {
     "build": "tsup",
