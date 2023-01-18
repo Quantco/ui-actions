@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - tag-action # TODO: remove when done testing
 
 jobs:
   commit-version-metadata:
@@ -123,8 +122,8 @@ jobs:
         run: |
           version="${{ steps.version-metadata.outputs.newVersion }}"
 
-          git tag "debug-v${version}"         # TODO remove the "debug-" prefix
-          git push origin "debug-v${version}" # TODO remove the "debug-" prefix
+          git tag "v${version}"
+          git push origin "v${version}"
 
           echo "pushed v${version} tag" >> $GITHUB_STEP_SUMMARY
 
@@ -136,11 +135,11 @@ jobs:
           major="${version%%.*}" # see https://www.linuxjournal.com/article/8919 for an explanation of this bash magic
 
           # delete the v(x) tag locally and on the remote
-          git tag -d "debug-v${major}" || echo "couldn't delete tag v${major} locally, maybe it didn't exist before, continuing.." # TODO: remove the "debug-" prefix
-          git push origin ":refs/tags/debug-v${major}" || echo "couldn't delete tag v${major} remotely, maybe it didn't exist before, continuing.." # TODO: remove the "debug-" prefix
+          git tag -d "v${major}" || echo "couldn't delete tag v${major} locally, maybe it didn't exist before, continuing.."
+          git push origin ":refs/tags/v${major}" || echo "couldn't delete tag v${major} remotely, maybe it didn't exist before, continuing.."
 
-          git tag "debug-v${major}"         # TODO: remove the "debug-" prefix
-          git push origin "debug-v${major}" # TODO: remove the "debug-" prefix
+          git tag "v${major}"
+          git push origin "v${major}"
 
           echo "moved v${major} tag to v${version}" >> $GITHUB_STEP_SUMMARY
 
@@ -151,8 +150,8 @@ jobs:
           version="${{ steps.version-metadata.outputs.newVersion }}"
           major="${version%%.*}"
 
-          # git tag "debug-v${major}"         # TODO: remove the "debug-" prefix
-          # git push origin "debug-v${major}" # TODO: remove the "debug-" prefix
+          # git tag "v${major}"
+          # git push origin "v${major}"
 
           echo "pushed v${major} tag" >> $GITHUB_STEP_SUMMARY
 
