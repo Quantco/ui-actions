@@ -53,7 +53,7 @@ jobs:
       - run: pnpm install
       - run: pnpm lint
       - run: pnpm build
-      
+
       - name: Commit changes
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: Quantco/ui-actions/version-metadata@fab1ae8578aa96e153821d4927b8e27975860570
+      - uses: Quantco/ui-actions/version-metadata@v1
         id: version-metadata
         with:
           # the version of both actions should be kept in sync
@@ -79,7 +79,7 @@ jobs:
           # TODO: remove this when the repo is public
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: Quantco/ui-actions/version-metadata@fab1ae8578aa96e153821d4927b8e27975860570
+      - uses: Quantco/ui-actions/version-metadata@v1
         id: version-metadata-sanity-check
         with:
           file: publish/package.json
