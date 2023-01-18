@@ -115,6 +115,9 @@ jobs:
           # pull auto build commits
           git pull
 
+          # fetch all tags
+          git fetch --tags
+
       - name: Push v(x.x.x) tag
         if: steps.version-metadata.outputs.changed == 'true'
         run: |
