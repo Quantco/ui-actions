@@ -87,15 +87,8 @@ jobs:
           # TODO: remove this when the repo is public
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # TODO: obviously this is not the best way to do this, add a "currentVersion" output to the action
-      #     a.changed && !b.changed && (a.newVersion != b.oldVersion)
-      # ||  b.changed && !b.changed && (b.newVersion != a.oldVersion)
-      # ||  a.changed &&  b.changed && (a.newVersion != b.oldVersion)
-      # || !a.changed && !b.changed && (a.oldVersion != b.oldVersion)
-      # -- or in other words --
-      # if the latest version of a is different then b
       - name: Sanity version check
-        if: steps.version-metadata.outputs.changed && !steps.version-metadata-sanity-check.changed && (steps.version-metadata.outputs.newVersion != steps.version-metadata-sanity-check.oldVersion) || steps.version-metadata-sanity-check.changed && !steps.version-metadata.outputs.changed && (steps.version-metadata-sanity-check.newVersion != steps.version-metadata.outputs.oldVersion) || steps.version-metadata.outputs.changed && steps.version-metadata-sanity-check.changed && (steps.version-metadata.outputs.newVersion != steps.version-metadata-sanity-check.oldVersion) || !steps.version-metadata.outputs.changed && !steps.version-metadata-sanity-check.changed && (steps.version-metadata.outputs.oldVersion != steps.version-metadata-sanity-check.oldVersion)
+        if: steps.version-metadata.outputs.newVersion != steps.version-metadata-sanity-check.outputs.newVersion
         run: |
           echo "version-metadata and publish version do not match"
           
