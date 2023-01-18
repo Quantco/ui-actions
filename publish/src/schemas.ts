@@ -11,6 +11,7 @@ const latestRegistryVersionSchema = semverSchema
 const versionMetadataJsonUnchangedSchema = z.object({
   changed: z.literal(false),
   oldVersion: semverSchema,
+  newVersion: semverSchema,
   commitBase: z.string(),
   commitHead: z.string(),
   changedFiles: z.object({

@@ -21,7 +21,10 @@ export type VersionMetadataResponse =
   | {
       /** Has the version changed since the last time the action was run? */
       changed: false
+      /** always the oldest version, if nothing changed this is just the current version */
       oldVersion: string
+      /** always the newest version, if nothing changed this is just the current version */
+      newVersion: string
       /** commit SHA of the base commit (previous head before pushing / merging new commits) */
       commitBase: string
       /** commit SHA of the head commit */
@@ -34,7 +37,9 @@ export type VersionMetadataResponse =
   | {
       /** Has the version changed since the last time the action was run? */
       changed: true
+      /** always the oldest version, if nothing changed this is just the current version */
       oldVersion: string
+      /** always the newest version, if nothing changed this is just the current version */
       newVersion: string
       /** Has the version changed since the last time the action was run? */
       type: VersionDiffType
@@ -122,7 +127,15 @@ const computeResponseFromChanges = (
   head: string
 ): VersionMetadataResponse => {
   if (changes.length === 0) {
-    return { changed: false, oldVersion, changes: [], changedFiles, commitBase: base, commitHead: head }
+    return {
+      changed: false,
+      oldVersion,
+      newVersion: oldVersion,
+      changes: [],
+      changedFiles,
+      commitBase: base,
+      commitHead: head
+    }
   } else {
     const newVersion = changes[changes.length - 1].newVersion
     return {
