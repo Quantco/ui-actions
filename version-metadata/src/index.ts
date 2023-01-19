@@ -14,7 +14,7 @@ import type { VersionDiffType, VersionChange, VersionMetadataResponse } from './
 
 const coreMocked = {
   setFailed: (msg: string) => {
-    console.error(msg)
+    coreMocked.error(msg)
     process.exit(1)
   },
   getInput: (name: string) => {
@@ -28,7 +28,14 @@ const coreMocked = {
     // this is the deprecated format for saving outputs in actions using commands only
     // just using it here to have some sort of consistent output format
     console.log(`::set-output name=${name}::${value}`)
-  }
+  },
+  info: (msg: string) => console.log(`\u001B[44m\u001B[37m I \u001B[39m\u001B[49m ` + msg), // blue "I"
+  debug: (msg: string) => console.log(`\u001B[45m\u001B[37m D \u001B[39m\u001B[49m ` + msg), // magenta "D"
+  warning: (msg: string) => console.warn(`\u001B[43m\u001B[37m W \u001B[39m\u001B[49m ` + msg), // yellow "W"
+  notice: (msg: string) => console.info(`\u001B[44m\u001B[37m ? \u001B[39m\u001B[49m ` + msg), // blue "?"
+  error: (msg: string) => console.error(`\u001B[41m\u001B[37m E \u001B[39m\u001B[49m ` + msg), // red "E"
+  startGroup: (label: string) => console.group(`\u001B[47m\u001B[30m ▼ \u001B[39m\u001B[49m ` + label), // white "▼"
+  endGroup: () => console.groupEnd()
 }
 
 const core = process.env.MOCKING ? coreMocked : coreDefault
@@ -50,6 +57,9 @@ async function run(): Promise<VersionMetadataResponse> {
   const octokit = getOctokit(token)
 
   const { base, head } = determineBaseAndHead(context)
+
+  core.info(`base SHA: ${base}`)
+  core.info(`head SHA: ${head}`)
 
   // a lot of metadata about the files changed in between the base and head commits, the commits in between themselves, ...
   const commitDiff = await octokit.rest.repos.compareCommits({
@@ -76,6 +86,12 @@ async function run(): Promise<VersionMetadataResponse> {
   // able to deal with shortened SHAs because of the `startsWith` check but not with other kinds of refs.
   const commits = unfilteredCommits.filter((commit) => commit.parents.length === 1 || commit.sha.startsWith(base))
 
+  core.startGroup('commits')
+  commits.forEach((commit) => {
+    core.info(`- ${commit.sha}: ${commit.commit.message.split('\n')[0].trim()}`)
+  })
+  core.endGroup()
+
   // all versions of the package.json file in between the base and head commits
   // this has a lot of duplicates, as the file doesn't necessarily change in each commit
   const maybeAllIterationsOfPackageJson = await Promise.all(
@@ -83,8 +99,16 @@ async function run(): Promise<VersionMetadataResponse> {
       octokit.rest.repos
         .getContent({ owner: context.repo.owner, repo: context.repo.repo, path: packageJsonFile, ref: commit.sha })
         .then((response) => ({ sha: commit.sha, response }))
+        .catch((error) => {
+          throw new Error(`could not retrieve package.json file from commit ${commit.sha}: ${error.message}`)
+        })
     )
   )
+
+  core.debug('all iterations of package.json:')
+  maybeAllIterationsOfPackageJson.forEach((iteration) => {
+    core.debug(`- ${iteration.sha}: ${JSON.stringify(iteration.response)}`)
+  })
 
   const failedRequests = maybeAllIterationsOfPackageJson.filter(({ response }) => response.status !== 200)
   if (failedRequests.length > 0) {
@@ -135,6 +159,12 @@ async function run(): Promise<VersionMetadataResponse> {
     deduplicateConsecutive((x) => x.version),
     { list: [], last: undefined }
   ).list
+
+  core.startGroup('all versions of package.json')
+  deduplicatedVersions.forEach(({ sha, version }) => {
+    core.info(`- ${sha}: ${version}`)
+  })
+  core.endGroup()
 
   const oldVersion = deduplicatedVersions[0].version
 
