@@ -8448,7 +8448,7 @@ var categorizeChangedFiles = (changedFiles) => {
 // src/index.ts
 var coreMocked = {
   setFailed: (msg) => {
-    console.error(msg);
+    coreMocked.error(msg);
     process.exit(1);
   },
   getInput: (name) => {
@@ -8460,7 +8460,14 @@ var coreMocked = {
   },
   setOutput(name, value) {
     console.log(`::set-output name=${name}::${value}`);
-  }
+  },
+  info: (msg) => console.log(`\x1B[44m\x1B[37m I \x1B[39m\x1B[49m ` + msg),
+  debug: (msg) => console.log(`\x1B[45m\x1B[37m D \x1B[39m\x1B[49m ` + msg),
+  warning: (msg) => console.warn(`\x1B[43m\x1B[37m W \x1B[39m\x1B[49m ` + msg),
+  notice: (msg) => console.info(`\x1B[44m\x1B[37m ? \x1B[39m\x1B[49m ` + msg),
+  error: (msg) => console.error(`\x1B[41m\x1B[37m E \x1B[39m\x1B[49m ` + msg),
+  startGroup: (label) => console.group(`\x1B[47m\x1B[30m \u25BC \x1B[39m\x1B[49m ` + label),
+  endGroup: () => console.groupEnd()
 };
 var core = process.env.MOCKING ? coreMocked : coreDefault;
 var packageJsonFile = (0, import_path.normalize)(core.getInput("file") || "package.json");
@@ -8468,6 +8475,8 @@ var token = core.getInput("token");
 async function run() {
   const octokit = (0, import_github.getOctokit)(token);
   const { base, head } = determineBaseAndHead(import_github.context);
+  core.info(`base SHA: ${base}`);
+  core.info(`head SHA: ${head}`);
   const commitDiff = await octokit.rest.repos.compareCommits({
     base,
     head,
@@ -8481,11 +8490,22 @@ async function run() {
   const changedFilesCategorized = categorizeChangedFiles(changedFiles);
   const unfilteredCommits = [commitDiff.data.base_commit, ...commitDiff.data.commits];
   const commits = unfilteredCommits.filter((commit) => commit.parents.length === 1 || commit.sha.startsWith(base));
+  core.startGroup("commits");
+  commits.forEach((commit) => {
+    core.info(`- ${commit.sha}: ${commit.commit.message.split("\n")[0].trim()}`);
+  });
+  core.endGroup();
   const maybeAllIterationsOfPackageJson = await Promise.all(
     commits.map(
-      (commit) => octokit.rest.repos.getContent({ owner: import_github.context.repo.owner, repo: import_github.context.repo.repo, path: packageJsonFile, ref: commit.sha }).then((response) => ({ sha: commit.sha, response }))
+      (commit) => octokit.rest.repos.getContent({ owner: import_github.context.repo.owner, repo: import_github.context.repo.repo, path: packageJsonFile, ref: commit.sha }).then((response) => ({ sha: commit.sha, response })).catch((error) => {
+        throw new Error(`could not retrieve package.json file from commit ${commit.sha}: ${error.message}`);
+      })
     )
   );
+  core.debug("all iterations of package.json:");
+  maybeAllIterationsOfPackageJson.forEach((iteration) => {
+    core.debug(`- ${iteration.sha}: ${JSON.stringify(iteration.response)}`);
+  });
   const failedRequests = maybeAllIterationsOfPackageJson.filter(({ response }) => response.status !== 200);
   if (failedRequests.length > 0) {
     const failedSHAs = failedRequests.map(({ sha }) => sha).join(", ");
@@ -8516,6 +8536,11 @@ async function run() {
     deduplicateConsecutive((x) => x.version),
     { list: [], last: void 0 }
   ).list;
+  core.startGroup("all versions of package.json");
+  deduplicatedVersions.forEach(({ sha, version }) => {
+    core.info(`- ${sha}: ${version}`);
+  });
+  core.endGroup();
   const oldVersion = deduplicatedVersions[0].version;
   const changes = deduplicatedVersions.reduce(
     (acc, curr, index) => {
