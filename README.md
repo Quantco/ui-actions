@@ -50,3 +50,11 @@ Nevertheless here's a minimal example of these actions in use.
   env:
     SUMMARY: ${{ steps.publish.outputs.reason }}
 ```
+
+## Development
+
+`ui-actions` uses `ui-actions` itself for creating git tags based on the version in the package.json files (see [`.github/workflows/build.yml`](.github/workflows/build.yml)).
+
+Whenever you want to release a new version you just have to increment the version number in **both** `publish/package.json` and `version-metadata/package.json`.
+
+For local testing you can use the `test.sh` files.
