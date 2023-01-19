@@ -12440,7 +12440,7 @@ var versionMetadataJsonSchema = unionType([versionMetadataJsonUnchangedSchema, v
 // src/index.ts
 var coreMocked = {
   setFailed: (msg) => {
-    console.error(msg);
+    coreMocked.error(msg);
     process.exit(1);
   },
   getInput: (name) => {
@@ -12452,7 +12452,14 @@ var coreMocked = {
   },
   setOutput(name, value) {
     console.log(`::set-output name=${name}::${value}`);
-  }
+  },
+  info: (msg) => console.log(`\x1B[44m\x1B[37m I \x1B[39m\x1B[49m ` + msg),
+  debug: (msg) => console.log(`\x1B[45m\x1B[37m D \x1B[39m\x1B[49m ` + msg),
+  warning: (msg) => console.warn(`\x1B[43m\x1B[37m W \x1B[39m\x1B[49m ` + msg),
+  notice: (msg) => console.info(`\x1B[44m\x1B[37m ? \x1B[39m\x1B[49m ` + msg),
+  error: (msg) => console.error(`\x1B[41m\x1B[37m E \x1B[39m\x1B[49m ` + msg),
+  startGroup: (label) => console.group(`\x1B[47m\x1B[30m \u25BC \x1B[39m\x1B[49m ` + label),
+  endGroup: () => console.groupEnd()
 };
 var core = process.env.MOCKING ? coreMocked : coreDefault;
 var incrementType = incrementTypeSchema.parse(core.getInput("increment-type"));
