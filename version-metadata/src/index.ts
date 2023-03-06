@@ -82,9 +82,25 @@ async function run(): Promise<VersionMetadataResponse> {
   const unfilteredCommits = [commitDiff.data.base_commit, ...commitDiff.data.commits]
 
   // filter merge commits as they disrupt the versioning logic (they contain all changes of the PR again), we still need to include the base commit regardless
+  // in addition we want to include merge commits which merged changes into our branch (e.g. "merged main into ...").
+  // finding these commits is a bit tricky, but the following gives us the correct commits:
+  // for merge commits (2 parents) we check if the first parent is the SHA of the previous commit
   // note: when doing local testing it might happen that shortened SHAs (or "main" / ..) are used, this is
   // able to deal with shortened SHAs because of the `startsWith` check but not with other kinds of refs.
-  const commits = unfilteredCommits.filter((commit) => commit.parents.length === 1 || commit.sha.startsWith(base))
+  // const commits = unfilteredCommits.filter((commit) => commit.parents.length === 1 || commit.sha.startsWith(base))
+  const commits = []
+  for (const commit of unfilteredCommits) {
+    const parents = commit.parents.map((p) => p.sha)
+    if (parents.length === 1 || commit.sha.startsWith(base)) {
+      commits.push(commit)
+    }
+
+    // "merged main into ..."
+    const parentOfInterest = parents[0]
+    if (commits[commits.length - 1].sha === parentOfInterest) {
+      commits.push(commit)
+    }
+  }
 
   core.startGroup('commits')
   commits.forEach((commit) => {

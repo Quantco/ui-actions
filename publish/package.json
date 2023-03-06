@@ -1,13 +1,13 @@
 {
   "name": "publish",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "An action that decides if a new release should be published",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint ./src --ext ts"
   },
-  "author": "Jannik Wibker <jannik.wiker@quantco.com>",
+  "author": "Jannik Wibker <jannik.wibker@quantco.com>",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",

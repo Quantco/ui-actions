@@ -138,6 +138,20 @@ const computeResponseFromChanges = (
     }
   } else {
     const newVersion = changes[changes.length - 1].newVersion
+
+    // this might happen with a non-linear git history, we treat this as if there are no version changes
+    if (newVersion === oldVersion) {
+      return {
+        changed: false,
+        oldVersion,
+        newVersion,
+        changes: [],
+        changedFiles,
+        commitBase: base,
+        commitHead: head
+      }
+    }
+
     return {
       changed: true,
       oldVersion,
