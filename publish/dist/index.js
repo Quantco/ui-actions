@@ -12480,13 +12480,14 @@ var run = () => {
     relevantFilesGlobs
   );
   const oldVersion = versionMetadata.oldVersion;
-  if (versionMetadata.changed) {
+  const detectedNonLinearHistory = versionMetadata.newVersion === latestRegistryVersion;
+  if (versionMetadata.changed && !detectedNonLinearHistory) {
     return {
       publish: true,
       version: versionMetadata.newVersion,
       reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, versionMetadata.newVersion, false)
     };
-  } else if (relevantFiles.length > 0) {
+  } else if (relevantFiles.length > 0 || detectedNonLinearHistory) {
     const incrementedVersion = incrementVersion(latestRegistryVersion, incrementType);
     return {
       publish: true,
