@@ -8374,6 +8374,17 @@ var computeResponseFromChanges = (changes, changedFiles, oldVersion, base, head)
     };
   } else {
     const newVersion = changes[changes.length - 1].newVersion;
+    if (newVersion === oldVersion) {
+      return {
+        changed: false,
+        oldVersion,
+        newVersion,
+        changes: [],
+        changedFiles,
+        commitBase: base,
+        commitHead: head
+      };
+    }
     return {
       changed: true,
       oldVersion,
@@ -8489,7 +8500,17 @@ async function run() {
   }
   const changedFilesCategorized = categorizeChangedFiles(changedFiles);
   const unfilteredCommits = [commitDiff.data.base_commit, ...commitDiff.data.commits];
-  const commits = unfilteredCommits.filter((commit) => commit.parents.length === 1 || commit.sha.startsWith(base));
+  const commits = [];
+  for (const commit of unfilteredCommits) {
+    const parents = commit.parents.map((p) => p.sha);
+    if (parents.length === 1 || commit.sha.startsWith(base)) {
+      commits.push(commit);
+    }
+    const parentOfInterest = parents[0];
+    if (commits[commits.length - 1].sha === parentOfInterest) {
+      commits.push(commit);
+    }
+  }
   core.startGroup("commits");
   commits.forEach((commit) => {
     core.info(`- ${commit.sha}: ${commit.commit.message.split("\n")[0].trim()}`);
