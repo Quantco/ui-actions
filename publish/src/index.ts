@@ -67,13 +67,27 @@ const run = () => {
 
   const oldVersion = versionMetadata.oldVersion
 
-  if (versionMetadata.changed) {
+  // if the latest published version is the same as the version which version-metadata
+  // detected a upgrade to we most likely have a non-linear git history.
+  // The following probably happened: (using branches main, A and B)
+  // 1. main: 1.0.0
+  // 2. A: 1.0.1
+  // 3. merge A into main
+  //    -> main: 1.0.1 (published 1.0.1)
+  // 5. merge main into B
+  //    -> B: 1.0.1
+  // 6. merge B into main
+  //    -> detected upgrade to 1.0.1 in main
+  //    -> tried to publish 1.0.1 again (failure)
+  const detectedNonLinearHistory = versionMetadata.newVersion === latestRegistryVersion
+
+  if (versionMetadata.changed && !detectedNonLinearHistory) {
     return {
       publish: true,
       version: versionMetadata.newVersion,
       reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, versionMetadata.newVersion, false)
     }
-  } else if (relevantFiles.length > 0) {
+  } else if (relevantFiles.length > 0 || detectedNonLinearHistory) {
     const incrementedVersion = incrementVersion(latestRegistryVersion, incrementType)
     return {
       publish: true,

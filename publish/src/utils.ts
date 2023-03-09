@@ -41,7 +41,6 @@ const incrementVersion = (version: string, type: 'pre-release' | 'patch' | 'mino
     throw new Error(`Could not increment version ${version}, pre release should be a number`)
   }
 
-  // TODO: add support for other types
   switch (type) {
     case 'pre-release':
       return incrementPreRelease([major, minor, patch, preRelease])
