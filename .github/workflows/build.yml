@@ -76,11 +76,13 @@ jobs:
           # the version of both actions should be kept in sync
           # this is enforced by the sanity check step below
           file: version-metadata/package.json
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: Quantco/ui-actions/version-metadata@v1
         id: version-metadata-sanity-check
         with:
           file: publish/package.json
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sanity version check
         if: steps.version-metadata.outputs.newVersion != steps.version-metadata-sanity-check.outputs.newVersion
