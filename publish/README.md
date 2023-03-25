@@ -162,15 +162,17 @@ Be sure to replace `<YOUR PACKAGE NAME>` with your own package.
 
 ## Local testing
 
-In order to test this locally you can use the `test.sh` script.
-It sets a few environment variables which are used by `@actions/core` to mock the GitHub API.
+In order to test this locally you can use the `test.sh` script as well as the `test-standalone.sh` script.
+They set a few environment variables which are used by `@actions/core` to mock the GitHub API.
 Change these variables to your liking.
 
 ```sh
 INPUT_TOKEN="<TOKEN>" ./test.sh
+./test-standalone.sh
 ```
 
 The `publish/test.sh` script calls the `version-metadata/test.sh` script, that's why the token is needed even though the action itself doesns't need it.
+The standalone script doesn't do this, it has the output of `version-metadata` hardcoded and therefore doesn't need a token, reason being that testing things such as malformed json is easier this way.
 
 The `MOCKING` environment variable is checked by `src/index.ts` to determine whether to use the mocked API or the real one.
 
