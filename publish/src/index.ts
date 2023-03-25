@@ -44,11 +44,82 @@ const core = process.env.MOCKING ? coreMocked : coreDefault
 /// --- MAIN ---
 
 // deal with inputs of the github action
-const incrementType = incrementTypeSchema.parse(core.getInput('increment-type'))
-const relevantFilesGlobs = relevantFilesSchema.parse(JSON.parse(core.getInput('relevant-files')))
-const packageJsonFilePath = packageJsonFilePathSchema.parse(core.getInput('package-json-file-path'))
-const latestRegistryVersion = latestRegistryVersionSchema.parse(core.getInput('latest-registry-version'))
-const versionMetadata = versionMetadataJsonSchema.parse(JSON.parse(core.getInput('version-metadata-json')))
+
+// get the inputs once and save them in this object
+// re-retreiving them again isn't computationally expensive, but lets still do it only once
+const inputs = {
+  'increment-type': core.getInput('increment-type'),
+  'relevant-files': core.getInput('relevant-files'),
+  'package-json-file-path': core.getInput('package-json-file-path'),
+  'latest-registry-version': core.getInput('latest-registry-version'),
+  'version-metadata-json': core.getInput('version-metadata-json')
+}
+
+// check if the inputs containing JSOn are actually valid JSON
+try {
+  JSON.parse(inputs['relevant-files'])
+} catch (err) {
+  const received = `- received: \`${inputs['relevant-files']}\``
+  const error = `- error: ${err}`
+  throw new Error(`Invalid JSON for "relevant-files":\n${received}\n${error}`)
+}
+
+try {
+  JSON.parse(inputs['version-metadata-json'])
+} catch (err) {
+  const received = `- received: \`${inputs['version-metadata-json']}\``
+  const error = `- error: ${err}`
+  throw new Error(`Invalid JSON for "version-metadata-json":\n${received}\n${error}`)
+}
+
+// save parse inputs using zod
+const maybeIncrementType = incrementTypeSchema.safeParse(inputs['increment-type'])
+const maybeRelevantFilesGlobs = relevantFilesSchema.safeParse(JSON.parse(inputs['relevant-files']))
+const maybePackageJsonFilePath = packageJsonFilePathSchema.safeParse(inputs['package-json-file-path'])
+const maybeLatestRegistryVersion = latestRegistryVersionSchema.safeParse(inputs['latest-registry-version'])
+const maybeVersionMetadata = versionMetadataJsonSchema.safeParse(JSON.parse(inputs['version-metadata-json']))
+
+// output indiivdual errors for each input
+if (!maybeIncrementType.success) {
+  const received = `- received: \`${inputs['increment-type']}\``
+  const formatted = `- formatted: \`${JSON.stringify(maybeIncrementType.error.format())}\``
+  const error = `- error: ${JSON.stringify(maybeIncrementType.error)}`
+  throw new Error(`Invalid input for "increment-type":\n${received}\n${formatted}\n${error}\n`)
+}
+
+if (!maybeRelevantFilesGlobs.success) {
+  const received = `- received: \`${inputs['relevant-files']}\``
+  const formatted = `- formatted: \`${JSON.stringify(maybeRelevantFilesGlobs.error.format())}\``
+  const error = `- error: ${JSON.stringify(maybeRelevantFilesGlobs.error)}`
+  throw new Error(`Invalid input for "relevant-files":\n${received}\n${formatted}\n${error}\n`)
+}
+
+if (!maybePackageJsonFilePath.success) {
+  const received = `- received: \`${inputs['package-json-file-path']}\``
+  const formatted = `- formatted: \`${JSON.stringify(maybePackageJsonFilePath.error.format())}\``
+  const error = `- error: ${JSON.stringify(maybePackageJsonFilePath.error)}`
+  throw new Error(`Invalid input for "package-json-file-path":\n${received}\n${formatted}\n${error}\n`)
+}
+
+if (!maybeLatestRegistryVersion.success) {
+  const received = `- received: \`${inputs['latest-registry-version']}\``
+  const formatted = `- formatted: \`${JSON.stringify(maybeLatestRegistryVersion.error.format())}\``
+  const error = `- error: ${JSON.stringify(maybeLatestRegistryVersion.error)}`
+  throw new Error(`Invalid input for "latest-registry-version":\n${received}\n${formatted}\n${error}\n`)
+}
+
+if (!maybeVersionMetadata.success) {
+  const received = `- received: \`${inputs['version-metadata-json']}\``
+  const formatted = `- formatted: \`${JSON.stringify(maybeVersionMetadata.error.format())}\``
+  const error = `- error: ${JSON.stringify(maybeVersionMetadata.error)}`
+  throw new Error(`Invalid input for "version-metadata-json":\n${received}\n${formatted}\n${error}\n`)
+}
+
+const incrementType = maybeIncrementType.data
+const relevantFilesGlobs = maybeRelevantFilesGlobs.data
+const packageJsonFilePath = maybePackageJsonFilePath.data
+const latestRegistryVersion = maybeLatestRegistryVersion.data
+const versionMetadata = maybeVersionMetadata.data
 
 const run = () => {
   const relevantFiles = multimatch(versionMetadata.changedFiles.all, relevantFilesGlobs)

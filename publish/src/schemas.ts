@@ -1,6 +1,11 @@
 import * as z from 'zod'
 
-const semverSchema = z.string().refine((value) => /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(value))
+const semverSchema = z.string().refine(
+  (value) => /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(value),
+  (value) => ({
+    message: `Invalid semver version (received: "${value}", expected: major.minor.patch or major.minor.patch-preRelease)`
+  })
+)
 const semverDiffTypeSchema = z.enum(['major', 'minor', 'patch', 'pre-release'])
 
 const incrementTypeSchema = z.enum(['pre-release', 'patch', 'minor', 'major'])
