@@ -2068,11 +2068,11 @@ var require_core = __commonJS({
     }
     exports.getInput = getInput;
     function getMultilineInput(name, options) {
-      const inputs = getInput(name, options).split("\n").filter((x) => x !== "");
+      const inputs2 = getInput(name, options).split("\n").filter((x) => x !== "");
       if (options && options.trimWhitespace === false) {
-        return inputs;
+        return inputs2;
       }
-      return inputs.map((input) => input.trim());
+      return inputs2.map((input) => input.trim());
     }
     exports.getMultilineInput = getMultilineInput;
     function getBooleanInput(name, options) {
@@ -12391,7 +12391,12 @@ var preprocessType = ZodEffects.createWithPreprocess;
 var pipelineType = ZodPipeline.create;
 
 // src/schemas.ts
-var semverSchema = stringType().refine((value) => /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(value));
+var semverSchema = stringType().refine(
+  (value) => /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(value),
+  (value) => ({
+    message: `Invalid semver version (received: "${value}", expected: major.minor.patch or major.minor.patch-preRelease)`
+  })
+);
 var semverDiffTypeSchema = enumType(["major", "minor", "patch", "pre-release"]);
 var incrementTypeSchema = enumType(["pre-release", "patch", "minor", "major"]);
 var relevantFilesSchema = arrayType(stringType());
@@ -12462,11 +12467,91 @@ var coreMocked = {
   endGroup: () => console.groupEnd()
 };
 var core = process.env.MOCKING ? coreMocked : coreDefault;
-var incrementType = incrementTypeSchema.parse(core.getInput("increment-type"));
-var relevantFilesGlobs = relevantFilesSchema.parse(JSON.parse(core.getInput("relevant-files")));
-var packageJsonFilePath = packageJsonFilePathSchema.parse(core.getInput("package-json-file-path"));
-var latestRegistryVersion = latestRegistryVersionSchema.parse(core.getInput("latest-registry-version"));
-var versionMetadata = versionMetadataJsonSchema.parse(JSON.parse(core.getInput("version-metadata-json")));
+var inputs = {
+  "increment-type": core.getInput("increment-type"),
+  "relevant-files": core.getInput("relevant-files"),
+  "package-json-file-path": core.getInput("package-json-file-path"),
+  "latest-registry-version": core.getInput("latest-registry-version"),
+  "version-metadata-json": core.getInput("version-metadata-json")
+};
+try {
+  JSON.parse(inputs["relevant-files"]);
+} catch (err) {
+  const received = `- received: \`${inputs["relevant-files"]}\``;
+  const error = `- error: ${err}`;
+  throw new Error(`Invalid JSON for "relevant-files":
+${received}
+${error}`);
+}
+try {
+  JSON.parse(inputs["version-metadata-json"]);
+} catch (err) {
+  const received = `- received: \`${inputs["version-metadata-json"]}\``;
+  const error = `- error: ${err}`;
+  throw new Error(`Invalid JSON for "version-metadata-json":
+${received}
+${error}`);
+}
+var maybeIncrementType = incrementTypeSchema.safeParse(inputs["increment-type"]);
+var maybeRelevantFilesGlobs = relevantFilesSchema.safeParse(JSON.parse(inputs["relevant-files"]));
+var maybePackageJsonFilePath = packageJsonFilePathSchema.safeParse(inputs["package-json-file-path"]);
+var maybeLatestRegistryVersion = latestRegistryVersionSchema.safeParse(inputs["latest-registry-version"]);
+var maybeVersionMetadata = versionMetadataJsonSchema.safeParse(JSON.parse(inputs["version-metadata-json"]));
+if (!maybeIncrementType.success) {
+  const received = `- received: \`${inputs["increment-type"]}\``;
+  const formatted = `- formatted: \`${JSON.stringify(maybeIncrementType.error.format())}\``;
+  const error = `- error: ${JSON.stringify(maybeIncrementType.error)}`;
+  throw new Error(`Invalid input for "increment-type":
+${received}
+${formatted}
+${error}
+`);
+}
+if (!maybeRelevantFilesGlobs.success) {
+  const received = `- received: \`${inputs["relevant-files"]}\``;
+  const formatted = `- formatted: \`${JSON.stringify(maybeRelevantFilesGlobs.error.format())}\``;
+  const error = `- error: ${JSON.stringify(maybeRelevantFilesGlobs.error)}`;
+  throw new Error(`Invalid input for "relevant-files":
+${received}
+${formatted}
+${error}
+`);
+}
+if (!maybePackageJsonFilePath.success) {
+  const received = `- received: \`${inputs["package-json-file-path"]}\``;
+  const formatted = `- formatted: \`${JSON.stringify(maybePackageJsonFilePath.error.format())}\``;
+  const error = `- error: ${JSON.stringify(maybePackageJsonFilePath.error)}`;
+  throw new Error(`Invalid input for "package-json-file-path":
+${received}
+${formatted}
+${error}
+`);
+}
+if (!maybeLatestRegistryVersion.success) {
+  const received = `- received: \`${inputs["latest-registry-version"]}\``;
+  const formatted = `- formatted: \`${JSON.stringify(maybeLatestRegistryVersion.error.format())}\``;
+  const error = `- error: ${JSON.stringify(maybeLatestRegistryVersion.error)}`;
+  throw new Error(`Invalid input for "latest-registry-version":
+${received}
+${formatted}
+${error}
+`);
+}
+if (!maybeVersionMetadata.success) {
+  const received = `- received: \`${inputs["version-metadata-json"]}\``;
+  const formatted = `- formatted: \`${JSON.stringify(maybeVersionMetadata.error.format())}\``;
+  const error = `- error: ${JSON.stringify(maybeVersionMetadata.error)}`;
+  throw new Error(`Invalid input for "version-metadata-json":
+${received}
+${formatted}
+${error}
+`);
+}
+var incrementType = maybeIncrementType.data;
+var relevantFilesGlobs = maybeRelevantFilesGlobs.data;
+var packageJsonFilePath = maybePackageJsonFilePath.data;
+var latestRegistryVersion = maybeLatestRegistryVersion.data;
+var versionMetadata = maybeVersionMetadata.data;
 var run = () => {
   const relevantFiles = multimatch(versionMetadata.changedFiles.all, relevantFilesGlobs);
   const preparedSummary = summary(
