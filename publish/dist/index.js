@@ -9213,23 +9213,28 @@ var incrementVersion = (version, type) => {
       throw new Error(`Unknown increment type "${type}"`);
   }
 };
-var summary = ({ owner, repo, base, head }, packageJsonFilePath2, relevantFilesGlobs2) => (relevantFiles, rawJson, oldVersion, newVersion, didAutoIncrement) => {
+var summary = ({
+  owner,
+  repo,
+  base,
+  head,
+  packageName: packageName2
+}, packageJsonFilePath2, relevantFilesGlobs2) => (relevantFiles, rawJson, oldVersion, newVersion, didAutoIncrement, isFirstPublish) => {
   const noNewVersion = `No relevant changes were made since the last time.`;
-  const newVersionAutoDetected = `Relevant files were changed which resulted in a version bump from \`${oldVersion}\` to \`${newVersion}\`.
+  const newVersionAutoDetected = `Relevant files were changed ${isFirstPublish ? `and the package hasn't been published before. Thus \`${newVersion}\` was published` : `which resulted in a version bump from \`${oldVersion}\` to \`${newVersion}\``}.
 
 <details>
   <summary>Relevant files</summary>
 
   <br />
 
-  ${relevantFiles.map((file) => `- ${file}`).join("\n  ")}
+  ${relevantFiles.map((file) => `  - ${file}`).join("\n").trim()}
 
   <sup>What is considered a relevant change? Anything that matches any of the following file globs:</sup><br />
   <sup>${relevantFilesGlobs2.map((fileGlob) => `\`${fileGlob}\``).join(", ")}</sup>
 
 </details>`;
-  const newVersionManuallySet = `Version in \`${packageJsonFilePath2}\` was updated from \`${oldVersion}\` to \`${newVersion}\`.
-Thus a new version was published.
+  const newVersionManuallySet = `Version in \`${packageJsonFilePath2}\` was updated from \`${oldVersion}\` to \`${newVersion}\`${isFirstPublish ? ` and the package hasn't been published before` : ""}. Thus \`${newVersion}\` was published${isFirstPublish ? " for the first time" : ""}.
 
 <details>
   <summary>Relevant files</summary>
@@ -9237,14 +9242,16 @@ Thus a new version was published.
   When incrementing the version number manually the relevant files aren't used in the decision making process, nevertheless here they are
   <br />
 
-  ${relevantFiles.map((file) => `- ${file}`).join("\n")}
+  ${relevantFiles.map((file) => `  - ${file}`).join("\n").trim()}
 
-  <sup>What is considered a relevant change? Anything that matches any of the following file globs:</sup><br />
-  <sup>${relevantFilesGlobs2.map((fileGlob) => `\`${fileGlob}\``).join(", ")}</sup>
+  <sup>
+    What is considered a relevant change? Anything that matches any of the following file globs:<br />
+    ${relevantFilesGlobs2.map((fileGlob) => `\`${fileGlob}\``).join(", ")}
+  </sup>
 
 </details>`;
   const template = (innerText) => `
-# publish
+# publish${packageName2 !== void 0 ? ` - ${packageName2}` : ""}
 
 <sup>This action checks if the version number has been updated in the repository and gathers a bit of metadata. Visit [ui-actions](https://github.com/Quantco/ui-actions) to get started.</sup>
 
@@ -9254,7 +9261,7 @@ ${innerText}
   <summary>Raw JSON data</summary>
 
   \`\`\`json
-  ${JSON.stringify(rawJson, null, 2).split("\n").map((line) => `  ${line}`).join("\n")}
+  ${JSON.stringify(rawJson, null, 2).split("\n").map((line) => `  ${line}`).join("\n").trim()}
   \`\`\`
 </details>
 
@@ -9265,7 +9272,7 @@ ${innerText}
   <a href="https://github.com/${owner}/${repo}/commit/${head}"><code>${head.substring(0, 6)}</code></a> (head)
 </sup>
 `;
-  const reason = oldVersion === newVersion ? noNewVersion : didAutoIncrement ? newVersionAutoDetected : newVersionManuallySet;
+  const reason = oldVersion === newVersion && !isFirstPublish ? noNewVersion : didAutoIncrement ? newVersionAutoDetected : newVersionManuallySet;
   return template(reason);
 };
 
@@ -12402,6 +12409,7 @@ var incrementTypeSchema = enumType(["pre-release", "patch", "minor", "major"]);
 var relevantFilesSchema = arrayType(stringType());
 var packageJsonFilePathSchema = stringType();
 var latestRegistryVersionSchema = semverSchema;
+var packageNameSchema = stringType().optional();
 var versionMetadataJsonUnchangedSchema = objectType({
   changed: literalType(false),
   oldVersion: semverSchema,
@@ -12448,12 +12456,24 @@ var coreMocked = {
     coreMocked.error(msg);
     process.exit(1);
   },
-  getInput: (name) => {
+  getInput: (name, options = { required: true, trimWhitespace: true }) => {
     const value = process.env[`INPUT_${name.replace(/-/g, "_").toUpperCase()}`];
-    if (value === void 0) {
-      throw new Error(`Input required and not supplied: ${name}`);
+    if (options.required) {
+      if (value === void 0) {
+        throw new Error(`Input required and not supplied: ${name}`);
+      }
+      if (options.trimWhitespace) {
+        return value.trim();
+      } else {
+        return value;
+      }
+    } else {
+      if (value && options.trimWhitespace) {
+        return value.trim();
+      } else {
+        return value;
+      }
     }
-    return value;
   },
   setOutput(name, value) {
     console.log(`::set-output name=${name}::${value}`);
@@ -12468,11 +12488,12 @@ var coreMocked = {
 };
 var core = process.env.MOCKING ? coreMocked : coreDefault;
 var inputs = {
-  "increment-type": core.getInput("increment-type"),
-  "relevant-files": core.getInput("relevant-files"),
-  "package-json-file-path": core.getInput("package-json-file-path"),
-  "latest-registry-version": core.getInput("latest-registry-version"),
-  "version-metadata-json": core.getInput("version-metadata-json")
+  "increment-type": core.getInput("increment-type", { required: true }),
+  "relevant-files": core.getInput("relevant-files", { required: true }),
+  "package-json-file-path": core.getInput("package-json-file-path", { required: true }),
+  "latest-registry-version": core.getInput("latest-registry-version", { required: true }),
+  "version-metadata-json": core.getInput("version-metadata-json", { required: true }),
+  "package-name": core.getInput("package-name", { required: false })
 };
 try {
   JSON.parse(inputs["relevant-files"]);
@@ -12497,6 +12518,7 @@ var maybeRelevantFilesGlobs = relevantFilesSchema.safeParse(JSON.parse(inputs["r
 var maybePackageJsonFilePath = packageJsonFilePathSchema.safeParse(inputs["package-json-file-path"]);
 var maybeLatestRegistryVersion = latestRegistryVersionSchema.safeParse(inputs["latest-registry-version"]);
 var maybeVersionMetadata = versionMetadataJsonSchema.safeParse(JSON.parse(inputs["version-metadata-json"]));
+var maybePackageName = packageNameSchema.safeParse(inputs["package-name"]);
 if (!maybeIncrementType.success) {
   const received = `- received: \`${inputs["increment-type"]}\``;
   const formatted = `- formatted: \`${JSON.stringify(maybeIncrementType.error.format())}\``;
@@ -12547,11 +12569,22 @@ ${formatted}
 ${error}
 `);
 }
+if (!maybePackageName.success) {
+  const received = `- received: \`${inputs["package-name"]}\``;
+  const formatted = `- formatted: \`${JSON.stringify(maybePackageName.error.format())}\``;
+  const error = `- error: ${JSON.stringify(maybePackageName.error)}`;
+  throw new Error(`Invalid input for "package-name":
+${received}
+${formatted}
+${error}
+`);
+}
 var incrementType = maybeIncrementType.data;
 var relevantFilesGlobs = maybeRelevantFilesGlobs.data;
 var packageJsonFilePath = maybePackageJsonFilePath.data;
 var latestRegistryVersion = maybeLatestRegistryVersion.data;
 var versionMetadata = maybeVersionMetadata.data;
+var packageName = maybePackageName.data;
 var run = () => {
   const relevantFiles = multimatch(versionMetadata.changedFiles.all, relevantFilesGlobs);
   const preparedSummary = summary(
@@ -12559,30 +12592,39 @@ var run = () => {
       owner: import_github.context.repo.owner,
       repo: import_github.context.repo.repo,
       base: versionMetadata.commitBase,
-      head: versionMetadata.commitHead
+      head: versionMetadata.commitHead,
+      packageName
     },
     packageJsonFilePath,
     relevantFilesGlobs
   );
   const oldVersion = versionMetadata.oldVersion;
   const detectedNonLinearHistory = versionMetadata.newVersion === latestRegistryVersion;
-  if (versionMetadata.changed && !detectedNonLinearHistory) {
+  const isFirstPublish = latestRegistryVersion === "0.0.0";
+  if (versionMetadata.changed && !detectedNonLinearHistory || relevantFiles.length > 0 && isFirstPublish) {
     return {
       publish: true,
       version: versionMetadata.newVersion,
-      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, versionMetadata.newVersion, false)
+      reason: preparedSummary(
+        relevantFiles,
+        versionMetadata,
+        oldVersion,
+        versionMetadata.newVersion,
+        false,
+        isFirstPublish
+      )
     };
   } else if (relevantFiles.length > 0 || detectedNonLinearHistory) {
     const incrementedVersion = incrementVersion(latestRegistryVersion, incrementType);
     return {
       publish: true,
       version: incrementedVersion,
-      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, incrementedVersion, true)
+      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, incrementedVersion, true, false)
     };
   } else {
     return {
       publish: false,
-      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, oldVersion, false)
+      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, oldVersion, false, false)
     };
   }
 };
