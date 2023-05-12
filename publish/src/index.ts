@@ -176,23 +176,36 @@ const run = () => {
   //    -> tried to publish 1.0.1 again (failure)
   const detectedNonLinearHistory = versionMetadata.newVersion === latestRegistryVersion
 
-  if (versionMetadata.changed && !detectedNonLinearHistory) {
+  // if the package hasn't been published before we fall back to `0.0.0` as latestRegistryVersion
+  // if there are relevant files that changed we want to publish while ignoring latestRegistryVersion
+  // we thus use versionMetadata.newVersion instead of latestRegistryVersion
+  // this is all handled in the first if-statement of the if-else chain below
+  const isFirstPublish = latestRegistryVersion === '0.0.0'
+
+  if ((versionMetadata.changed && !detectedNonLinearHistory) || (relevantFiles.length > 0 && isFirstPublish)) {
     return {
       publish: true,
       version: versionMetadata.newVersion,
-      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, versionMetadata.newVersion, false)
+      reason: preparedSummary(
+        relevantFiles,
+        versionMetadata,
+        oldVersion,
+        versionMetadata.newVersion,
+        false,
+        isFirstPublish
+      )
     }
   } else if (relevantFiles.length > 0 || detectedNonLinearHistory) {
     const incrementedVersion = incrementVersion(latestRegistryVersion, incrementType)
     return {
       publish: true,
       version: incrementedVersion,
-      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, incrementedVersion, true)
+      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, incrementedVersion, true, false)
     }
   } else {
     return {
       publish: false,
-      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, oldVersion, false)
+      reason: preparedSummary(relevantFiles, versionMetadata, oldVersion, oldVersion, false, false)
     }
   }
 }

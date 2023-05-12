@@ -72,27 +72,36 @@ const summary =
     rawJson: VersionMetadataResponse,
     oldVersion: string,
     newVersion: string,
-    didAutoIncrement: boolean
+    didAutoIncrement: boolean,
+    isFirstPublish: boolean
   ) => {
     // start of with actual content that greatly depends on the decision about publishing, not publishing, etc.
     const noNewVersion = `No relevant changes were made since the last time.`
 
-    const newVersionAutoDetected = `Relevant files were changed which resulted in a version bump from \`${oldVersion}\` to \`${newVersion}\`.
+    const newVersionAutoDetected = `Relevant files were changed ${
+      isFirstPublish
+        ? `and the package hasn't been published before. Thus \`${newVersion}\` was published`
+        : `which resulted in a version bump from \`${oldVersion}\` to \`${newVersion}\``
+    }.
 
 <details>
   <summary>Relevant files</summary>
 
   <br />
 
-  ${relevantFiles.map((file) => `- ${file}`).join('\n  ')}
+  ${relevantFiles
+    .map((file) => `  - ${file}`)
+    .join('\n')
+    .trim()}
 
   <sup>What is considered a relevant change? Anything that matches any of the following file globs:</sup><br />
   <sup>${relevantFilesGlobs.map((fileGlob) => `\`${fileGlob}\``).join(', ')}</sup>
 
 </details>`
 
-    const newVersionManuallySet = `Version in \`${packageJsonFilePath}\` was updated from \`${oldVersion}\` to \`${newVersion}\`.
-Thus a new version was published.
+    const newVersionManuallySet = `Version in \`${packageJsonFilePath}\` was updated from \`${oldVersion}\` to \`${newVersion}\`${
+      isFirstPublish ? ` and the package hasn't been published before` : ''
+    }. Thus \`${newVersion}\` was published${isFirstPublish ? ' for the first time' : ''}.
 
 <details>
   <summary>Relevant files</summary>
@@ -143,7 +152,11 @@ ${innerText}
 `
     // decide which one to use
     const reason =
-      oldVersion === newVersion ? noNewVersion : didAutoIncrement ? newVersionAutoDetected : newVersionManuallySet
+      oldVersion === newVersion && !isFirstPublish
+        ? noNewVersion
+        : didAutoIncrement
+        ? newVersionAutoDetected
+        : newVersionManuallySet
 
     return template(reason)
   }
