@@ -100,10 +100,15 @@ Thus a new version was published.
   When incrementing the version number manually the relevant files aren't used in the decision making process, nevertheless here they are
   <br />
 
-  ${relevantFiles.map((file) => `- ${file}`).join('\n')}
+  ${relevantFiles
+    .map((file) => `  - ${file}`)
+    .join('\n')
+    .trim()}
 
-  <sup>What is considered a relevant change? Anything that matches any of the following file globs:</sup><br />
-  <sup>${relevantFilesGlobs.map((fileGlob) => `\`${fileGlob}\``).join(', ')}</sup>
+  <sup>
+    What is considered a relevant change? Anything that matches any of the following file globs:<br />
+    ${relevantFilesGlobs.map((fileGlob) => `\`${fileGlob}\``).join(', ')}
+  </sup>
 
 </details>`
 
@@ -124,6 +129,7 @@ ${innerText}
       .split('\n')
       .map((line) => `  ${line}`)
       .join('\n') /* indent each line by 2 spaces */
+      .trim() /* trim to remove duplicate '  ' on the first line */
   }
   \`\`\`
 </details>
