@@ -8455,6 +8455,24 @@ var categorizeChangedFiles = (changedFiles) => {
   }
   return { all, added, modified, removed, renamed };
 };
+var parseVersionFromFileContents = (fileContent, sha, gitUrl) => {
+  let parsed;
+  try {
+    parsed = JSON.parse(fileContent);
+  } catch (error) {
+    return {
+      success: false,
+      error: `Failed to parse JSON of package.json file (url: ${gitUrl}, sha: ${sha}, content: "${fileContent}")`
+    };
+  }
+  if (!parsed.version) {
+    return {
+      success: false,
+      error: `version is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`
+    };
+  }
+  return { success: true, version: parsed.version };
+};
 
 // src/index.ts
 var coreMocked = {
@@ -8462,12 +8480,24 @@ var coreMocked = {
     coreMocked.error(msg);
     process.exit(1);
   },
-  getInput: (name) => {
+  getInput: (name, options = { required: true, trimWhitespace: true }) => {
     const value = process.env[`INPUT_${name.replace(/-/g, "_").toUpperCase()}`];
-    if (value === void 0) {
-      throw new Error(`Input required and not supplied: ${name}`);
+    if (options.required) {
+      if (value === void 0) {
+        throw new Error(`Input required and not supplied: ${name}`);
+      }
+      if (options.trimWhitespace) {
+        return value.trim();
+      } else {
+        return value;
+      }
+    } else {
+      if (value && options.trimWhitespace) {
+        return value.trim();
+      } else {
+        return value;
+      }
     }
-    return value;
   },
   setOutput(name, value) {
     console.log(`::set-output name=${name}::${value}`);
@@ -8481,8 +8511,8 @@ var coreMocked = {
   endGroup: () => console.groupEnd()
 };
 var core = process.env.MOCKING ? coreMocked : coreDefault;
-var packageJsonFile = (0, import_path.normalize)(core.getInput("file") || "package.json");
-var token = core.getInput("token");
+var packageJsonFile = (0, import_path.normalize)(core.getInput("file", { required: false }) || "package.json");
+var token = core.getInput("token", { required: true });
 async function run() {
   const octokit = (0, import_github.getOctokit)(token);
   const { base, head } = determineBaseAndHead(import_github.context);
@@ -8518,41 +8548,47 @@ async function run() {
   core.endGroup();
   const maybeAllIterationsOfPackageJson = await Promise.all(
     commits.map(
-      (commit) => octokit.rest.repos.getContent({ owner: import_github.context.repo.owner, repo: import_github.context.repo.repo, path: packageJsonFile, ref: commit.sha }).then((response) => ({ sha: commit.sha, response })).catch((error) => {
-        throw new Error(`could not retrieve package.json file from commit ${commit.sha}: ${error.message}`);
+      (commit) => octokit.rest.repos.getContent({ owner: import_github.context.repo.owner, repo: import_github.context.repo.repo, path: packageJsonFile, ref: commit.sha }).then((response) => ({ sha: commit.sha, response, isFallback: false })).catch((error) => {
+        core.warning(
+          `could not retrieve package.json file from commit ${commit.sha}: ${error.message}; falling back to 0.0.0 for this commit`
+        );
+        const fallbackBase64 = Buffer.from(`{ "version": "0.0.0", "fallback_for_commit": "${commit.sha}" }`).toString(
+          "base64"
+        );
+        return { sha: commit.sha, response: { status: 200, data: { content: fallbackBase64 } }, isFallback: true };
       })
     )
   );
   core.debug("all iterations of package.json:");
   maybeAllIterationsOfPackageJson.forEach((iteration) => {
-    core.debug(`- ${iteration.sha}: ${JSON.stringify(iteration.response)}`);
+    core.debug(`- ${iteration.sha}: ${JSON.stringify(iteration.response)}${iteration.isFallback ? " (fallback)" : ""}`);
   });
   const failedRequests = maybeAllIterationsOfPackageJson.filter(({ response }) => response.status !== 200);
   if (failedRequests.length > 0) {
     const failedSHAs = failedRequests.map(({ sha }) => sha).join(", ");
     throw new Error(`could not retrieve all versions of "${packageJsonFile}" (${failedSHAs}), aborting`);
   }
-  const allIterationsOfPackageJson = maybeAllIterationsOfPackageJson.map(({ response, sha }) => ({
+  const allIterationsOfPackageJson = maybeAllIterationsOfPackageJson.map(({ response, sha, isFallback }) => ({
     ...response.data,
-    sha
+    sha,
+    isFallback
   }));
   const deduplicatedVersionsOfPackageJson = allIterationsOfPackageJson.reduce(
     deduplicateConsecutive((x) => x.content),
     { list: [], last: void 0 }
   ).list;
-  const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(({ content, sha, git_url: gitUrl }) => {
-    if (!content)
-      throw new Error(`content is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`);
-    let parsed;
-    try {
-      parsed = JSON.parse(Buffer.from(content, "base64").toString());
-    } catch (error) {
-      throw new Error(`Failed to parse JSON of package.json file (url: ${gitUrl}, sha: ${sha}, content: "${content}")`);
+  const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(
+    ({ content, sha, git_url: gitUrl, isFallback }) => {
+      if (!content)
+        throw new Error(`content is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`);
+      const fileContent = Buffer.from(content, "base64").toString();
+      const maybeVersion = parseVersionFromFileContents(fileContent, sha, gitUrl);
+      if (!maybeVersion.success) {
+        throw new Error(maybeVersion.error);
+      }
+      return { version: maybeVersion.version, sha, isFallback };
     }
-    if (!parsed.version)
-      throw new Error(`version is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`);
-    return { version: parsed.version, sha };
-  });
+  );
   const deduplicatedVersions = allVersionsOfPackageJson.reduce(
     deduplicateConsecutive((x) => x.version),
     { list: [], last: void 0 }
