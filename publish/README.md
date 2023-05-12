@@ -17,7 +17,7 @@ The decision is made using the following procedure:
 
 ### GitHub Workflow
 
-```yaml
+```yml
 - id: publish # This will be the reference for getting the outputs later on.
   uses: Quantco/ui-actions/publish@v1
 
@@ -34,6 +34,8 @@ The decision is made using the following procedure:
     # the json output of the version-metadata action
     # you can of course replace version-metadata with differernt action but it needs to have the same data structure
     version-metadata-json: ${{ steps.version-metadata.outputs.json }}
+    # Turns `# publish` into `# publish - <package-name>` in the reason output. Purely cosmetic.
+    package-name: "<package-name>
 ```
 
 ### Outputs
@@ -115,7 +117,7 @@ Let's look at the 3 following situations and what each results in
 In this example `lib/package.json` is used to get the version.
 Be sure to replace `<YOUR PACKAGE NAME>` with your own package.
 
-```yaml
+```yml
 # checkout, setup-node, etc. omitted
 
 - id: version-metadata

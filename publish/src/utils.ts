@@ -57,7 +57,13 @@ const incrementVersion = (version: string, type: 'pre-release' | 'patch' | 'mino
 
 const summary =
   (
-    { owner, repo, base, head }: { owner: string; repo: string; base: string; head: string },
+    {
+      owner,
+      repo,
+      base,
+      head,
+      packageName
+    }: { owner: string; repo: string; base: string; head: string; packageName?: string },
     packageJsonFilePath: string,
     relevantFilesGlobs: string[]
   ) =>
@@ -103,7 +109,7 @@ Thus a new version was published.
 
     // now add the wrapper around it that is the same for all cases
     const template = (innerText: string) => `
-# publish
+# publish${packageName !== undefined ? ` - ${packageName}` : ''}
 
 <sup>This action checks if the version number has been updated in the repository and gathers a bit of metadata. Visit [ui-actions](https://github.com/Quantco/ui-actions) to get started.</sup>
 

@@ -8,7 +8,8 @@ import {
   relevantFilesSchema,
   packageJsonFilePathSchema,
   latestRegistryVersionSchema,
-  versionMetadataJsonSchema
+  versionMetadataJsonSchema,
+  packageNameSchema
 } from './schemas'
 
 // --- MOCKING ---
@@ -17,12 +18,24 @@ const coreMocked = {
     coreMocked.error(msg)
     process.exit(1)
   },
-  getInput: (name: string) => {
+  getInput: (name: string, options: coreDefault.InputOptions = { required: true, trimWhitespace: true }) => {
     const value = process.env[`INPUT_${name.replace(/-/g, '_').toUpperCase()}`]
-    if (value === undefined) {
-      throw new Error(`Input required and not supplied: ${name}`)
+    if (options.required) {
+      if (value === undefined) {
+        throw new Error(`Input required and not supplied: ${name}`)
+      }
+      if (options.trimWhitespace) {
+        return value.trim()
+      } else {
+        return value
+      }
+    } else {
+      if (value && options.trimWhitespace) {
+        return value.trim()
+      } else {
+        return value
+      }
     }
-    return value
   },
   // github internally just calls toString on everything, this can lead to confusion, therefore just accepting strings here outright
   setOutput(name: string, value: string) {
@@ -48,11 +61,12 @@ const core = process.env.MOCKING ? coreMocked : coreDefault
 // get the inputs once and save them in this object
 // re-retreiving them again isn't computationally expensive, but lets still do it only once
 const inputs = {
-  'increment-type': core.getInput('increment-type'),
-  'relevant-files': core.getInput('relevant-files'),
-  'package-json-file-path': core.getInput('package-json-file-path'),
-  'latest-registry-version': core.getInput('latest-registry-version'),
-  'version-metadata-json': core.getInput('version-metadata-json')
+  'increment-type': core.getInput('increment-type', { required: true }) as string,
+  'relevant-files': core.getInput('relevant-files', { required: true }) as string,
+  'package-json-file-path': core.getInput('package-json-file-path', { required: true }) as string,
+  'latest-registry-version': core.getInput('latest-registry-version', { required: true }) as string,
+  'version-metadata-json': core.getInput('version-metadata-json', { required: true }) as string,
+  'package-name': core.getInput('package-name', { required: false })
 }
 
 // check if the inputs containing JSOn are actually valid JSON
@@ -78,8 +92,9 @@ const maybeRelevantFilesGlobs = relevantFilesSchema.safeParse(JSON.parse(inputs[
 const maybePackageJsonFilePath = packageJsonFilePathSchema.safeParse(inputs['package-json-file-path'])
 const maybeLatestRegistryVersion = latestRegistryVersionSchema.safeParse(inputs['latest-registry-version'])
 const maybeVersionMetadata = versionMetadataJsonSchema.safeParse(JSON.parse(inputs['version-metadata-json']))
+const maybePackageName = packageNameSchema.safeParse(inputs['package-name'])
 
-// output indiivdual errors for each input
+// output individual errors for each input
 if (!maybeIncrementType.success) {
   const received = `- received: \`${inputs['increment-type']}\``
   const formatted = `- formatted: \`${JSON.stringify(maybeIncrementType.error.format())}\``
@@ -115,11 +130,19 @@ if (!maybeVersionMetadata.success) {
   throw new Error(`Invalid input for "version-metadata-json":\n${received}\n${formatted}\n${error}\n`)
 }
 
+if (!maybePackageName.success) {
+  const received = `- received: \`${inputs['package-name']}\``
+  const formatted = `- formatted: \`${JSON.stringify(maybePackageName.error.format())}\``
+  const error = `- error: ${JSON.stringify(maybePackageName.error)}`
+  throw new Error(`Invalid input for "package-name":\n${received}\n${formatted}\n${error}\n`)
+}
+
 const incrementType = maybeIncrementType.data
 const relevantFilesGlobs = maybeRelevantFilesGlobs.data
 const packageJsonFilePath = maybePackageJsonFilePath.data
 const latestRegistryVersion = maybeLatestRegistryVersion.data
 const versionMetadata = maybeVersionMetadata.data
+const packageName = maybePackageName.data
 
 const run = () => {
   const relevantFiles = multimatch(versionMetadata.changedFiles.all, relevantFilesGlobs)
@@ -130,7 +153,8 @@ const run = () => {
       owner: context.repo.owner,
       repo: context.repo.repo,
       base: versionMetadata.commitBase,
-      head: versionMetadata.commitHead
+      head: versionMetadata.commitHead,
+      packageName
     },
     packageJsonFilePath,
     relevantFilesGlobs

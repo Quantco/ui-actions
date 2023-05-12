@@ -12,7 +12,7 @@ This repo includes the following actions:
 For more detailed explanations see the respective readmes.
 Nevertheless here's a minimal example of these actions in use.
 
-```yaml
+```yml
 - id: version-metadata
   uses: Quantco/ui-actions/version-metadata@v1
   with:

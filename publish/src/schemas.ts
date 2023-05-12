@@ -12,6 +12,7 @@ const incrementTypeSchema = z.enum(['pre-release', 'patch', 'minor', 'major'])
 const relevantFilesSchema = z.array(z.string())
 const packageJsonFilePathSchema = z.string()
 const latestRegistryVersionSchema = semverSchema
+const packageNameSchema = z.string().optional()
 
 const versionMetadataJsonUnchangedSchema = z.object({
   changed: z.literal(false),
@@ -63,5 +64,6 @@ export {
   relevantFilesSchema,
   packageJsonFilePathSchema,
   latestRegistryVersionSchema,
-  versionMetadataJsonSchema
+  versionMetadataJsonSchema,
+  packageNameSchema
 }
