@@ -18,6 +18,9 @@ inputs:
   version-metadata-json:
     description: The JSON output of the version-metadata action
     required: true
+  package-name:
+    description: Turns `# publish` into `# publish - <package-name>` in the reason output. Purely cosmetic.
+    required: false
 
 outputs:
   publish:

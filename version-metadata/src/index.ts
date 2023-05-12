@@ -6,7 +6,8 @@ import {
   computeResponseFromChanges,
   determineBaseAndHead,
   deduplicateConsecutive,
-  categorizeChangedFiles
+  categorizeChangedFiles,
+  parseVersionFromFileContents
 } from './utils'
 import type { VersionDiffType, VersionChange, VersionMetadataResponse } from './utils'
 
@@ -17,12 +18,24 @@ const coreMocked = {
     coreMocked.error(msg)
     process.exit(1)
   },
-  getInput: (name: string) => {
+  getInput: (name: string, options: coreDefault.InputOptions = { required: true, trimWhitespace: true }) => {
     const value = process.env[`INPUT_${name.replace(/-/g, '_').toUpperCase()}`]
-    if (value === undefined) {
-      throw new Error(`Input required and not supplied: ${name}`)
+    if (options.required) {
+      if (value === undefined) {
+        throw new Error(`Input required and not supplied: ${name}`)
+      }
+      if (options.trimWhitespace) {
+        return value.trim()
+      } else {
+        return value
+      }
+    } else {
+      if (value && options.trimWhitespace) {
+        return value.trim()
+      } else {
+        return value
+      }
     }
-    return value
   },
   setOutput(name: string, value: string | number | boolean) {
     // this is the deprecated format for saving outputs in actions using commands only
@@ -43,8 +56,8 @@ const core = process.env.MOCKING ? coreMocked : coreDefault
 /// --- MAIN ---
 
 // deal with inputs of the github action
-const packageJsonFile = normalize(core.getInput('file') || 'package.json')
-const token = core.getInput('token')
+const packageJsonFile = normalize(core.getInput('file', { required: false }) || 'package.json')
+const token = core.getInput('token', { required: true }) as string
 
 async function run(): Promise<VersionMetadataResponse> {
   // octokit is the GitHub API client
@@ -114,16 +127,24 @@ async function run(): Promise<VersionMetadataResponse> {
     commits.map((commit) =>
       octokit.rest.repos
         .getContent({ owner: context.repo.owner, repo: context.repo.repo, path: packageJsonFile, ref: commit.sha })
-        .then((response) => ({ sha: commit.sha, response }))
+        .then((response) => ({ sha: commit.sha, response, isFallback: false }))
         .catch((error) => {
-          throw new Error(`could not retrieve package.json file from commit ${commit.sha}: ${error.message}`)
+          core.warning(
+            `could not retrieve package.json file from commit ${commit.sha}: ${error.message}; falling back to 0.0.0 for this commit`
+          )
+
+          // insert a dummy response with a version of 0.0.0 so that we can still continue
+          const fallbackBase64 = Buffer.from(`{ "version": "0.0.0", "fallback_for_commit": "${commit.sha}" }`).toString(
+            'base64'
+          )
+          return { sha: commit.sha, response: { status: 200, data: { content: fallbackBase64 } }, isFallback: true }
         })
     )
   )
 
   core.debug('all iterations of package.json:')
   maybeAllIterationsOfPackageJson.forEach((iteration) => {
-    core.debug(`- ${iteration.sha}: ${JSON.stringify(iteration.response)}`)
+    core.debug(`- ${iteration.sha}: ${JSON.stringify(iteration.response)}${iteration.isFallback ? ' (fallback)' : ''}`)
   })
 
   const failedRequests = maybeAllIterationsOfPackageJson.filter(({ response }) => response.status !== 200)
@@ -143,12 +164,14 @@ async function run(): Promise<VersionMetadataResponse> {
     git_url: string | null
     html_url: string | null
     download_url: string | null
+    isFallback: boolean
   }
 
   // can now assert that all requests were successful, as the status code is 200
-  const allIterationsOfPackageJson = maybeAllIterationsOfPackageJson.map(({ response, sha }) => ({
+  const allIterationsOfPackageJson = maybeAllIterationsOfPackageJson.map(({ response, sha, isFallback }) => ({
     ...response.data,
-    sha
+    sha,
+    isFallback
   })) as NarrowedGetContentResponse[]
 
   // remove duplicates from `allIterationsOfPackageJson`
@@ -158,18 +181,20 @@ async function run(): Promise<VersionMetadataResponse> {
   ).list
 
   // parse the contents of all the package.json files and map { version, sha } each time
-  const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(({ content, sha, git_url: gitUrl }) => {
-    if (!content) throw new Error(`content is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`)
-    let parsed: { version?: string }
-    try {
-      parsed = JSON.parse(Buffer.from(content, 'base64').toString())
-    } catch (error) {
-      throw new Error(`Failed to parse JSON of package.json file (url: ${gitUrl}, sha: ${sha}, content: "${content}")`)
-    }
-    if (!parsed.version) throw new Error(`version is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`)
+  const allVersionsOfPackageJson = deduplicatedVersionsOfPackageJson.map(
+    ({ content, sha, git_url: gitUrl, isFallback }) => {
+      if (!content) throw new Error(`content is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`)
 
-    return { version: parsed.version, sha }
-  })
+      const fileContent = Buffer.from(content, 'base64').toString()
+
+      const maybeVersion = parseVersionFromFileContents(fileContent, sha, gitUrl)
+      if (!maybeVersion.success) {
+        throw new Error(maybeVersion.error)
+      }
+
+      return { version: maybeVersion.version, sha, isFallback }
+    }
+  )
 
   const deduplicatedVersions = allVersionsOfPackageJson.reduce(
     deduplicateConsecutive((x) => x.version),

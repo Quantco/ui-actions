@@ -13,7 +13,7 @@ This action only computes metadata and doesn't push git tags, publishes a packag
 
 You have to set up a step like this in your workflow (this assumes you've already [checked out](https://github.com/actions/checkout) your repo and [set up Node](https://github.com/actions/setup-node)):
 
-```yaml
+```yml
 - id: version # This will be the reference for getting the outputs.
   uses: Quantco/ui-actions/version-metadata@v1 # You can choose the version/branch you prefer.
 
@@ -25,12 +25,8 @@ You have to set up a step like this in your workflow (this assumes you've alread
     # Default: package.json
     file: ./lib/package.json
 
-    # If you want this action to work on private repositories, you need to provide
-    # a token with the correct authorization. You can use the built-in `GITHUB_TOKEN`
-    # in most cases :)
-    # reference: https://help.github.com/en/github/automating-your-workflow-with-github-actions/virtual-environments-for-github-actions#github_token-secret
-    # Additionally providing a token for public repositories might be useful as this
-    # Increases your GitHub api rate limit.
+    # Needed for both private and public repos as the GitHub api client needs a token
+    # to be instantiated.
     token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -47,7 +43,7 @@ Let's assume you just merged a pull request into main in which you did the follo
 
 The action will output the following:
 
-```yaml
+```yml
 changed: true
 oldVersion: '1.2.2'
 newVersion: '1.2.4'
@@ -108,7 +104,7 @@ To access these outputs, you need to access the context of the step you previous
 
 With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_NAME`.
 
-```yaml
+```yml
 - name: Check if version has been updated
   id: version
   uses: Quantco/ui-actions/version-metadata@v1
@@ -125,7 +121,7 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
 
 ## Examples
 
-```yaml
+```yml
 # checkout, setup-node, etc. omitted
 
 - name: Check if version has been updated

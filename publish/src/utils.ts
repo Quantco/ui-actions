@@ -57,7 +57,13 @@ const incrementVersion = (version: string, type: 'pre-release' | 'patch' | 'mino
 
 const summary =
   (
-    { owner, repo, base, head }: { owner: string; repo: string; base: string; head: string },
+    {
+      owner,
+      repo,
+      base,
+      head,
+      packageName
+    }: { owner: string; repo: string; base: string; head: string; packageName?: string },
     packageJsonFilePath: string,
     relevantFilesGlobs: string[]
   ) =>
@@ -66,27 +72,36 @@ const summary =
     rawJson: VersionMetadataResponse,
     oldVersion: string,
     newVersion: string,
-    didAutoIncrement: boolean
+    didAutoIncrement: boolean,
+    isFirstPublish: boolean
   ) => {
     // start of with actual content that greatly depends on the decision about publishing, not publishing, etc.
     const noNewVersion = `No relevant changes were made since the last time.`
 
-    const newVersionAutoDetected = `Relevant files were changed which resulted in a version bump from \`${oldVersion}\` to \`${newVersion}\`.
+    const newVersionAutoDetected = `Relevant files were changed ${
+      isFirstPublish
+        ? `and the package hasn't been published before. Thus \`${newVersion}\` was published`
+        : `which resulted in a version bump from \`${oldVersion}\` to \`${newVersion}\``
+    }.
 
 <details>
   <summary>Relevant files</summary>
 
   <br />
 
-  ${relevantFiles.map((file) => `- ${file}`).join('\n  ')}
+  ${relevantFiles
+    .map((file) => `  - ${file}`)
+    .join('\n')
+    .trim()}
 
   <sup>What is considered a relevant change? Anything that matches any of the following file globs:</sup><br />
   <sup>${relevantFilesGlobs.map((fileGlob) => `\`${fileGlob}\``).join(', ')}</sup>
 
 </details>`
 
-    const newVersionManuallySet = `Version in \`${packageJsonFilePath}\` was updated from \`${oldVersion}\` to \`${newVersion}\`.
-Thus a new version was published.
+    const newVersionManuallySet = `Version in \`${packageJsonFilePath}\` was updated from \`${oldVersion}\` to \`${newVersion}\`${
+      isFirstPublish ? ` and the package hasn't been published before` : ''
+    }. Thus \`${newVersion}\` was published${isFirstPublish ? ' for the first time' : ''}.
 
 <details>
   <summary>Relevant files</summary>
@@ -94,16 +109,21 @@ Thus a new version was published.
   When incrementing the version number manually the relevant files aren't used in the decision making process, nevertheless here they are
   <br />
 
-  ${relevantFiles.map((file) => `- ${file}`).join('\n')}
+  ${relevantFiles
+    .map((file) => `  - ${file}`)
+    .join('\n')
+    .trim()}
 
-  <sup>What is considered a relevant change? Anything that matches any of the following file globs:</sup><br />
-  <sup>${relevantFilesGlobs.map((fileGlob) => `\`${fileGlob}\``).join(', ')}</sup>
+  <sup>
+    What is considered a relevant change? Anything that matches any of the following file globs:<br />
+    ${relevantFilesGlobs.map((fileGlob) => `\`${fileGlob}\``).join(', ')}
+  </sup>
 
 </details>`
 
     // now add the wrapper around it that is the same for all cases
     const template = (innerText: string) => `
-# publish
+# publish${packageName !== undefined ? ` - ${packageName}` : ''}
 
 <sup>This action checks if the version number has been updated in the repository and gathers a bit of metadata. Visit [ui-actions](https://github.com/Quantco/ui-actions) to get started.</sup>
 
@@ -118,6 +138,7 @@ ${innerText}
       .split('\n')
       .map((line) => `  ${line}`)
       .join('\n') /* indent each line by 2 spaces */
+      .trim() /* trim to remove duplicate '  ' on the first line */
   }
   \`\`\`
 </details>
@@ -131,7 +152,11 @@ ${innerText}
 `
     // decide which one to use
     const reason =
-      oldVersion === newVersion ? noNewVersion : didAutoIncrement ? newVersionAutoDetected : newVersionManuallySet
+      oldVersion === newVersion && !isFirstPublish
+        ? noNewVersion
+        : didAutoIncrement
+        ? newVersionAutoDetected
+        : newVersionManuallySet
 
     return template(reason)
   }
