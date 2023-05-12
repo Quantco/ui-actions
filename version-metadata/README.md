@@ -167,4 +167,4 @@ The `MOCKING` environment variable is checked by `src/index.ts` to determine whe
 
 ## License
 
-This action is distributed under the MIT license, check the [license](LICENSE) for more info.
+This action is distributed under the MIT license, check the [license](../LICENSE) for more info.
