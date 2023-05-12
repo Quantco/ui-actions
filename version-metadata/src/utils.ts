@@ -262,11 +262,36 @@ const categorizeChangedFiles = (
   return { all, added, modified, removed, renamed }
 }
 
+const parseVersionFromFileContents = (
+  fileContent: string,
+  sha: string,
+  gitUrl: string | null
+): { success: false; error: string } | { success: true; version: string } => {
+  let parsed: { version?: string }
+  try {
+    parsed = JSON.parse(fileContent)
+  } catch (error) {
+    return {
+      success: false,
+      error: `Failed to parse JSON of package.json file (url: ${gitUrl}, sha: ${sha}, content: "${fileContent}")`
+    }
+  }
+  if (!parsed.version) {
+    return {
+      success: false,
+      error: `version is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`
+    }
+  }
+
+  return { success: true, version: parsed.version }
+}
+
 export {
   parseSemverVersion,
   getSemverDiffType,
   computeResponseFromChanges,
   determineBaseAndHead,
   deduplicateConsecutive,
-  categorizeChangedFiles
+  categorizeChangedFiles,
+  parseVersionFromFileContents
 }
