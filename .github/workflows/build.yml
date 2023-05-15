@@ -148,8 +148,8 @@ jobs:
           version="${{ steps.version-metadata.outputs.newVersion }}"
           major="${version%%.*}"
 
-          # git tag "v${major}"
-          # git push origin "v${major}"
+          git tag "v${major}"
+          git push origin "v${major}"
 
           echo "pushed v${major} tag" >> $GITHUB_STEP_SUMMARY
 
