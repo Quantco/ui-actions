@@ -11,7 +11,7 @@ This action only computes metadata and doesn't push git tags, publishes a packag
 
 ### GitHub Workflow
 
-You have to set up a step like this in your workflow (this assumes you've already [checked out](https://github.com/actions/checkout) your repo and [set up Node](https://github.com/actions/setup-node)):
+You have to set up a step like this in your workflow (this assumes you've already [checked out](https://github.com/actions/checkout) your repo):
 
 ```yml
 - id: version # This will be the reference for getting the outputs.
@@ -140,6 +140,61 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
 - name: Output changed files
   run: |
     echo "Changed files: ${{ fromJSON(steps.version.outputs.changedFiles).all }}"
+```
+
+## Overriding the version extraction method
+
+There is the possibility to override the extraction method used to get the version number from a file.
+This should be used sparingly as this is not an officially supported feature and might break in the future.
+
+To do so use the `overrideExtractionMethod` input and set it to one of the following values:
+
+- `regex:<the regex matching the version number>`
+- `command:<the command that extracts the version number>`
+
+The regex is matched against the contents of the file and is expected to match a valid version number.
+The command is given the file contents via stdin and is expected to return a valid version number on stdout.
+
+### Regex example
+
+For this example we'll use a yaml file like this:
+
+```yml
+package:
+  version: 1.2.3
+```
+
+Then you could use the following inputs:
+
+```yml
+- name: Check if version has been updated
+  id: version
+  uses: Quantco/ui-actions/version-metadata@v1
+  with:
+    file: ./version.yml
+    overrideExtractionMethod: 'regex:version: (.*)'
+```
+
+### Command example
+
+It is also possible to use a command to extract the version number.
+
+Let's use the yaml file as an example again but this time use [`yq`](https://github.com/mikefarah/yq) to extract the version number:
+
+```yml
+package:
+  version: 1.2.3
+```
+
+You can then use this script in the action:
+
+```yml
+- name: Check if version has been updated
+  id: version
+  uses: Quantco/ui-actions/version-metadata@v1
+  with:
+    file: ./version.yml
+    overrideExtractionMethod: 'command:yq .package.version -'
 ```
 
 

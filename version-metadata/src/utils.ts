@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process'
 import type { Context } from '@actions/github/lib/context'
 
 export type VersionDiffType = 'major' | 'minor' | 'patch' | 'pre-release'
@@ -262,7 +263,7 @@ const categorizeChangedFiles = (
   return { all, added, modified, removed, renamed }
 }
 
-const parseVersionFromFileContents = (
+const parseVersionFromFileContentsJSON = (
   fileContent: string,
   sha: string,
   gitUrl: string | null
@@ -284,6 +285,85 @@ const parseVersionFromFileContents = (
   }
 
   return { success: true, version: parsed.version }
+}
+
+const parseVersionFromFileContentsRegex = (
+  fileContent: string,
+  sha: string,
+  gitUrl: string | null,
+  regex: RegExp
+): { success: false; error: string } | { success: true; version: string } => {
+  const maybeVersionMatch = fileContent.match(regex)
+  if (!maybeVersionMatch) {
+    return {
+      success: false,
+      error: `Failed to extract version from file contents (url: ${gitUrl}, sha: ${sha}, content: "${fileContent}")`
+    }
+  }
+
+  const maybeVersion = maybeVersionMatch[0]
+
+  if (!/^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(maybeVersion)) {
+    return {
+      success: false,
+      error: `Provided regex failed to extract a valid version from file contents (url: ${gitUrl}, sha: ${sha}, content: "${fileContent}")`
+    }
+  }
+
+  return { success: true, version: maybeVersionMatch[0] }
+}
+
+const parseVersionFromFileContentsCommand = (
+  fileContent: string,
+  sha: string,
+  gitUrl: string | null,
+  command: string
+): { success: false; error: string } | { success: true; version: string } => {
+  const child = spawnSync(command, [], {
+    input: fileContent,
+    encoding: 'utf-8'
+  })
+
+  if (child.error) {
+    return {
+      success: false,
+      error: `Failed to execute command (url: ${gitUrl}, sha: ${sha}, error: ${child.error})`
+    }
+  }
+
+  if (child.status !== 0) {
+    return {
+      success: false,
+      error: `command exited with non-zero status code (url: ${gitUrl}, sha: ${sha}, status: ${child.status}, stderr: ${child.stderr})`
+    }
+  }
+
+  const maybeVersion = child.stdout.trim()
+
+  if (!/^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(maybeVersion)) {
+    return {
+      success: false,
+      error: `Provided command failed to extract a valid version from file contents (url: ${gitUrl}, sha: ${sha}, content: "${fileContent}")`
+    }
+  }
+
+  return { success: true, version: maybeVersion }
+}
+
+const parseVersionFromFileContents = (
+  fileContent: string,
+  sha: string,
+  gitUrl: string | null,
+  extraction: { type: 'json' } | { type: 'regex'; regex: RegExp } | { type: 'command'; command: string }
+): { success: false; error: string } | { success: true; version: string } => {
+  switch (extraction.type) {
+    case 'json':
+      return parseVersionFromFileContentsJSON(fileContent, sha, gitUrl)
+    case 'regex':
+      return parseVersionFromFileContentsRegex(fileContent, sha, gitUrl, extraction.regex)
+    case 'command':
+      return parseVersionFromFileContentsCommand(fileContent, sha, gitUrl, extraction.command)
+  }
 }
 
 export {
