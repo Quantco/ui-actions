@@ -301,7 +301,7 @@ const parseVersionFromFileContentsRegex = (
     }
   }
 
-  const maybeVersion = (maybeVersionMatch[0] || '').trim()
+  const maybeVersion = (maybeVersionMatch[1] || '').trim()
 
   if (!/^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(maybeVersion)) {
     return {
@@ -310,7 +310,7 @@ const parseVersionFromFileContentsRegex = (
     }
   }
 
-  return { success: true, version: maybeVersionMatch[0] }
+  return { success: true, version: maybeVersion }
 }
 
 const parseVersionFromFileContentsCommand = (
