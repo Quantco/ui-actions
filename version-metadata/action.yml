@@ -10,6 +10,19 @@ inputs:
   token:
     description: GitHub token used for authentication (you can use secrets.GITHUB_TOKEN)
     required: false
+  version-extraction-override:
+    description: |
+      Optionally override how the version is extracted from the file. This is useful in the rare cases you don't use a package.json file but some other format.
+      This option supports two modes of operation:
+      - regex: A regular expression that matches the version number in the file. This is supplied in the following way: `regex:<the regex matching the version number>`
+      - command: A command that is passed the file contents via stdin and outputs the version number. This is supplied in the following way: `command:<the command that extracts the version number>`
+
+      Examples:
+      - regex: `regex:(\\d+\\.\\d+\\.\\d+)`
+      - command: `command:jq -r .version`
+
+      It is to be noted that this isn't a fully supported feature and any issues that arise may not be fixed in a timely manner.
+    required: false
 
 outputs:
   changed:
@@ -22,7 +35,7 @@ outputs:
     description: New version number, current version if nothing changed
   commitResponsible:
     description: The SHA of the commit that last changed the version number
-  commitBase: 
+  commitBase:
     description: commit SHA of the base commit (previous head before pushing / merging new commits)
   commitHead:
     description: commit SHA of the head commit

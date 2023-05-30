@@ -58,6 +58,33 @@ const core = process.env.MOCKING ? coreMocked : coreDefault
 // deal with inputs of the github action
 const packageJsonFile = normalize(core.getInput('file', { required: false }) || 'package.json')
 const token = core.getInput('token', { required: true }) as string
+const versionExtractionOverride = core.getInput('version-extraction-override', { required: false }) || ''
+
+let extractionMethod: { type: 'json' } | { type: 'regex'; regex: RegExp } | { type: 'command'; command: string } = {
+  type: 'json'
+}
+
+if (versionExtractionOverride.startsWith('regex:')) {
+  try {
+    extractionMethod = {
+      type: 'regex',
+      regex: RegExp(versionExtractionOverride.slice('regex:'.length))
+    }
+  } catch (error) {
+    throw new Error(
+      `Used regex for version-extraction-override but regex is invalid\nreceived:${versionExtractionOverride.slice(
+        'regex:'.length
+      )}\nerror: ${error}`
+    )
+  }
+} else if (versionExtractionOverride.startsWith('command:')) {
+  extractionMethod = {
+    type: 'command',
+    command: versionExtractionOverride.slice('command:'.length)
+  }
+} else if (versionExtractionOverride !== '') {
+  throw new Error(`Invalid value for version-extraction-override: ${versionExtractionOverride}`)
+}
 
 async function run(): Promise<VersionMetadataResponse> {
   // octokit is the GitHub API client
@@ -187,7 +214,7 @@ async function run(): Promise<VersionMetadataResponse> {
 
       const fileContent = Buffer.from(content, 'base64').toString()
 
-      const maybeVersion = parseVersionFromFileContents(fileContent, sha, gitUrl)
+      const maybeVersion = parseVersionFromFileContents(fileContent, sha, gitUrl, extractionMethod)
       if (!maybeVersion.success) {
         throw new Error(maybeVersion.error)
       }
