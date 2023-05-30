@@ -301,12 +301,12 @@ const parseVersionFromFileContentsRegex = (
     }
   }
 
-  const maybeVersion = maybeVersionMatch[0]
+  const maybeVersion = (maybeVersionMatch[0] || '').trim()
 
   if (!/^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(maybeVersion)) {
     return {
       success: false,
-      error: `Provided regex failed to extract a valid version from file contents (url: ${gitUrl}, sha: ${sha}, content: "${fileContent}")`
+      error: `Provided regex failed to extract a valid version from file contents (url: ${gitUrl}, sha: ${sha}, match: "${maybeVersion}", content: "${fileContent}")`
     }
   }
 
@@ -343,7 +343,7 @@ const parseVersionFromFileContentsCommand = (
   if (!/^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9]+))?$/.test(maybeVersion)) {
     return {
       success: false,
-      error: `Provided command failed to extract a valid version from file contents (url: ${gitUrl}, sha: ${sha}, content: "${fileContent}")`
+      error: `Provided command failed to extract a valid version from file contents (url: ${gitUrl}, sha: ${sha}, output: "${maybeVersion}", content: "${fileContent}")`
     }
   }
 
