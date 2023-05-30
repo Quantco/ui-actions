@@ -1,6 +1,6 @@
 {
   "name": "publish",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "An action that decides if a new release should be published",
   "scripts": {
     "build": "tsup",
