@@ -58,7 +58,7 @@ const core = process.env.MOCKING ? coreMocked : coreDefault
 // deal with inputs of the github action
 const packageJsonFile = normalize(core.getInput('file', { required: false }) || 'package.json')
 const token = core.getInput('token', { required: true }) as string
-const versionExtractionOverride = core.getInput('versionExtractionOverride', { required: false }) || ''
+const versionExtractionOverride = core.getInput('version-extraction-override', { required: false }) || ''
 
 let extractionMethod: { type: 'json' } | { type: 'regex'; regex: RegExp } | { type: 'command'; command: string } = {
   type: 'json'
@@ -71,7 +71,11 @@ if (versionExtractionOverride.startsWith('regex:')) {
       regex: RegExp(versionExtractionOverride.slice('regex:'.length))
     }
   } catch (error) {
-    throw new Error(`Used regex for versionExtractionOverride but regex is invalid\nreceived:${regex}\nerror: ${error}`)
+    throw new Error(
+      `Used regex for version-extraction-override but regex is invalid\nreceived:${versionExtractionOverride.slice(
+        'regex:'.length
+      )}\nerror: ${error}`
+    )
   }
 } else if (versionExtractionOverride.startsWith('command:')) {
   extractionMethod = {
@@ -79,7 +83,7 @@ if (versionExtractionOverride.startsWith('regex:')) {
     command: versionExtractionOverride.slice('command:'.length)
   }
 } else if (versionExtractionOverride !== '') {
-  throw new Error(`Invalid value for versionExtractionOverride: ${versionExtractionOverride}`)
+  throw new Error(`Invalid value for version-extraction-override: ${versionExtractionOverride}`)
 }
 
 async function run(): Promise<VersionMetadataResponse> {

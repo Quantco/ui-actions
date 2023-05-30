@@ -10,7 +10,7 @@ inputs:
   token:
     description: GitHub token used for authentication (you can use secrets.GITHUB_TOKEN)
     required: false
-  versionExtractionOverride:
+  version-extraction-override:
     description: |
       Optionally override how the version is extracted from the file. This is useful in the rare cases you don't use a package.json file but some other format.
       This option supports two modes of operation:

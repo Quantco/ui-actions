@@ -147,7 +147,7 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
 There is the possibility to override the extraction method used to get the version number from a file.
 This should be used sparingly as this is not an officially supported feature and might break in the future.
 
-To do so use the `overrideExtractionMethod` input and set it to one of the following values:
+To do so use the `version-extraction-override` input and set it to one of the following values:
 
 - `regex:<the regex matching the version number>`
 - `command:<the command that extracts the version number>`
@@ -172,7 +172,7 @@ Then you could use the following inputs:
   uses: Quantco/ui-actions/version-metadata@v1
   with:
     file: ./version.yml
-    overrideExtractionMethod: 'regex:version: (.*)'
+    version-extraction-override: 'regex:version: (.*)'
 ```
 
 ### Command example
@@ -194,7 +194,7 @@ You can then use this script in the action:
   uses: Quantco/ui-actions/version-metadata@v1
   with:
     file: ./version.yml
-    overrideExtractionMethod: 'command:yq .package.version -'
+    version-extraction-override: 'command:yq .package.version -'
 ```
 
 
