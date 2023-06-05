@@ -1,5 +1,7 @@
 # Monorepo for UI related actions
 
+![GitHub tag (latest semver)](https://img.shields.io/github/v/tag/Quantco/ui-actions?color=%23000000&label=latest%20version&sort=semver)
+
 This repo includes the following actions:
 
 - [version-metadata](./version-metadata)

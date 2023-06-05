@@ -1,5 +1,7 @@
 # Version Metadata
 
+![GitHub tag (latest semver)](https://img.shields.io/github/v/tag/Quantco/ui-actions?color=%23000000&label=latest%20version&sort=semver)
+
 This GitHub action checks what the current version number in the package.json file (location can be specified) is, if it changed since the last check and which files were updated in the process.
 
 Using this you can easily automate publishing to a package registry such as NPM or [GPR](https://github.com/features/packages).

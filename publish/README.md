@@ -1,5 +1,7 @@
 # Publish
 
+![GitHub tag (latest semver)](https://img.shields.io/github/v/tag/Quantco/ui-actions?color=%23000000&label=latest%20version&sort=semver)
+
 This GitHub action takes the input of [version-metadata](./version-metadata) and based on that decides wether or not to publish a new package.
 This is in part based on the provided file globs.
 
