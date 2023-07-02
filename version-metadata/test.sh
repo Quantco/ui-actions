@@ -12,6 +12,7 @@ export GITHUB_BASE="30de4a10cfbee3a21a30c66b7c83898ae292c8ec"
 export GITHUB_HEAD="b292c84af61b832207a4c360ded207462d588e4f"
 export GITHUB_EVENT_PATH="./payload.json" # we create a payload.json file which is then read by `@actions/core` using this env var
 export INPUT_FILE="./version-metadata/package.json" # maps to `file` input in action.yml
+# export INPUT_VERSION_EXTRACTION_OVERRIDE="" # maps to `version-extraction-override` input in action.yml
 
 # you'll likely have to supply a token using `INPUT_TOKEN`, can be done when calling `./test.sh`
 

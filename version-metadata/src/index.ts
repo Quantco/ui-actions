@@ -100,6 +100,12 @@ async function run(): Promise<VersionMetadataResponse> {
 
   core.info(`base SHA: ${base}`)
   core.info(`head SHA: ${head}`)
+  if (extractionMethod.type === 'command') {
+    core.info(`version extraction command: ${extractionMethod.command}`)
+  }
+  if (extractionMethod.type === 'regex') {
+    core.info(`version extraction regex: ${extractionMethod.regex}`)
+  }
 
   // a lot of metadata about the files changed in between the base and head commits, the commits in between themselves, ...
   const commitDiff = await octokit.rest.repos.compareCommits({
@@ -214,7 +220,12 @@ async function run(): Promise<VersionMetadataResponse> {
 
       const fileContent = Buffer.from(content, 'base64').toString()
 
-      const maybeVersion = parseVersionFromFileContents(fileContent, sha, gitUrl, extractionMethod)
+      const maybeVersion = parseVersionFromFileContents(
+        fileContent,
+        sha,
+        gitUrl,
+        isFallback ? { type: 'json' } : extractionMethod
+      )
       if (!maybeVersion.success) {
         throw new Error(maybeVersion.error)
       }
