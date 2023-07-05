@@ -18,3 +18,9 @@ jobs:
       - run: pnpm install
       - run: pnpm --filter "*" lint
       - run: pnpm --filter "*" build
+
+      - name: run version-metadata tests
+        run: ./index.mjs
+        working-directory: version-metadata/test
+        env:
+          INPUT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
