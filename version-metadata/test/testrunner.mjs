@@ -36,7 +36,10 @@ const runTest = (test) => {
     after: test.head
   }
 
-  fs.unlinkSync('../payload.json')
+  // delete if exists, ignore otherwise
+  try {
+    fs.unlinkSync('../payload.json')
+  } catch (_error) {}
   fs.writeFileSync('../payload.json', JSON.stringify(payload))
 
   return $`node ../dist/index.js`

@@ -1,4 +1,4 @@
-#!/usr/bin/env npx zx --quiet
+#!/usr/bin/env -S npx zx --quiet
 
 import { runTests } from './testrunner.mjs'
 
