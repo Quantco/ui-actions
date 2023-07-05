@@ -4565,7 +4565,7 @@ var require_public_api = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/node-fetch@2.6.11/node_modules/node-fetch/lib/index.mjs
+// ../node_modules/.pnpm/node-fetch@2.6.12/node_modules/node-fetch/lib/index.mjs
 function FetchError(message, type, systemError) {
   Error.call(this, message);
   this.message = message;
@@ -5147,7 +5147,7 @@ function fixResponseChunkedTransferBadEnding(request2, errorCallback) {
     const headers = response.headers;
     if (headers["transfer-encoding"] === "chunked" && !headers["content-length"]) {
       response.once("close", function(hadError) {
-        const hasDataListener = socket.listenerCount("data") > 0;
+        const hasDataListener = socket && socket.listenerCount("data") > 0;
         if (hasDataListener && !hadError) {
           const err = new Error("Premature close");
           err.code = "ERR_STREAM_PREMATURE_CLOSE";
@@ -5167,7 +5167,7 @@ function destroyStream(stream, err) {
 }
 var import_stream, import_http, import_url, import_whatwg_url, import_https, import_zlib, Readable, BUFFER, TYPE, Blob, convert, INTERNALS, PassThrough, invalidTokenRegex, invalidHeaderCharRegex, MAP, Headers, INTERNAL, HeadersIteratorPrototype, INTERNALS$1, STATUS_CODES, Response, INTERNALS$2, URL3, parse_url, format_url, streamDestructionSupported, Request, URL$1, PassThrough$1, isDomainOrSubdomain, isSameProtocol, lib_default;
 var init_lib = __esm({
-  "../node_modules/.pnpm/node-fetch@2.6.11/node_modules/node-fetch/lib/index.mjs"() {
+  "../node_modules/.pnpm/node-fetch@2.6.12/node_modules/node-fetch/lib/index.mjs"() {
     import_stream = __toESM(require("stream"), 1);
     import_http = __toESM(require("http"), 1);
     import_url = __toESM(require("url"), 1);
@@ -8817,6 +8817,12 @@ async function run() {
   const { base, head } = determineBaseAndHead(import_github.context);
   core.info(`base SHA: ${base}`);
   core.info(`head SHA: ${head}`);
+  if (extractionMethod.type === "command") {
+    core.info(`version extraction command: ${extractionMethod.command}`);
+  }
+  if (extractionMethod.type === "regex") {
+    core.info(`version extraction regex: ${extractionMethod.regex}`);
+  }
   const commitDiff = await octokit.rest.repos.compareCommits({
     base,
     head,
@@ -8881,7 +8887,12 @@ async function run() {
       if (!content)
         throw new Error(`content is undefined, this should not happen (url: ${gitUrl}, sha: ${sha})`);
       const fileContent = Buffer.from(content, "base64").toString();
-      const maybeVersion = parseVersionFromFileContents(fileContent, sha, gitUrl, extractionMethod);
+      const maybeVersion = parseVersionFromFileContents(
+        fileContent,
+        sha,
+        gitUrl,
+        isFallback ? { type: "json" } : extractionMethod
+      );
       if (!maybeVersion.success) {
         throw new Error(maybeVersion.error);
       }
