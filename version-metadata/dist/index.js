@@ -33,9 +33,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/utils.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/utils.js
 var require_utils = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/utils.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/utils.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.toCommandProperties = exports.toCommandValue = void 0;
@@ -65,9 +65,9 @@ var require_utils = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/command.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/command.js
 var require_command = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/command.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/command.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -485,9 +485,9 @@ var init_esm_node = __esm({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/file-command.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/file-command.js
 var require_file_command = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/file-command.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/file-command.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -551,9 +551,9 @@ var require_file_command = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/proxy.js
+// ../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/proxy.js
 var require_proxy = __commonJS({
-  "../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/proxy.js"(exports) {
+  "../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/proxy.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.checkBypass = exports.getProxyUrl = void 0;
@@ -570,7 +570,12 @@ var require_proxy = __commonJS({
         }
       })();
       if (proxyVar) {
-        return new URL(proxyVar);
+        try {
+          return new URL(proxyVar);
+        } catch (_a) {
+          if (!proxyVar.startsWith("http://") && !proxyVar.startsWith("https://"))
+            return new URL(`http://${proxyVar}`);
+        }
       } else {
         return void 0;
       }
@@ -852,9 +857,9 @@ var require_tunnel2 = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/index.js
+// ../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/index.js
 var require_lib = __commonJS({
-  "../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/index.js"(exports) {
+  "../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/index.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -998,6 +1003,19 @@ var require_lib = __commonJS({
             });
             this.message.on("end", () => {
               resolve(output.toString());
+            });
+          }));
+        });
+      }
+      readBodyBuffer() {
+        return __awaiter(this, void 0, void 0, function* () {
+          return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+            const chunks = [];
+            this.message.on("data", (chunk) => {
+              chunks.push(chunk);
+            });
+            this.message.on("end", () => {
+              resolve(Buffer.concat(chunks));
             });
           }));
         });
@@ -1432,9 +1450,9 @@ var require_lib = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/auth.js
+// ../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/auth.js
 var require_auth = __commonJS({
-  "../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/auth.js"(exports) {
+  "../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/auth.js"(exports) {
     "use strict";
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -1536,9 +1554,9 @@ var require_auth = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/oidc-utils.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/oidc-utils.js
 var require_oidc_utils = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/oidc-utils.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/oidc-utils.js"(exports) {
     "use strict";
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -1603,7 +1621,7 @@ var require_oidc_utils = __commonJS({
  
         Error Code : ${error.statusCode}
  
-        Error Message: ${error.result.message}`);
+        Error Message: ${error.message}`);
           });
           const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
           if (!id_token) {
@@ -1634,9 +1652,9 @@ var require_oidc_utils = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/summary.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/summary.js
 var require_summary = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/summary.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/summary.js"(exports) {
     "use strict";
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -1928,9 +1946,9 @@ var require_summary = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/path-utils.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/path-utils.js
 var require_path_utils = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/path-utils.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/path-utils.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -1978,9 +1996,9 @@ var require_path_utils = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/core.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/core.js
 var require_core = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/core.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/core.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -4565,7 +4583,7 @@ var require_public_api = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/node-fetch@2.6.12/node_modules/node-fetch/lib/index.mjs
+// ../node_modules/.pnpm/node-fetch@2.7.0/node_modules/node-fetch/lib/index.mjs
 function FetchError(message, type, systemError) {
   Error.call(this, message);
   this.message = message;
@@ -4917,9 +4935,6 @@ function getNodeRequestOptions(request2) {
   if (typeof agent === "function") {
     agent = agent(parsedURL);
   }
-  if (!headers.has("Connection") && !agent) {
-    headers.set("Connection", "close");
-  }
   return Object.assign({}, parsedURL, {
     method: request2.method,
     headers: exportNodeCompatibleHeaders(headers),
@@ -5167,7 +5182,7 @@ function destroyStream(stream, err) {
 }
 var import_stream, import_http, import_url, import_whatwg_url, import_https, import_zlib, Readable, BUFFER, TYPE, Blob, convert, INTERNALS, PassThrough, invalidTokenRegex, invalidHeaderCharRegex, MAP, Headers, INTERNAL, HeadersIteratorPrototype, INTERNALS$1, STATUS_CODES, Response, INTERNALS$2, URL3, parse_url, format_url, streamDestructionSupported, Request, URL$1, PassThrough$1, isDomainOrSubdomain, isSameProtocol, lib_default;
 var init_lib = __esm({
-  "../node_modules/.pnpm/node-fetch@2.6.12/node_modules/node-fetch/lib/index.mjs"() {
+  "../node_modules/.pnpm/node-fetch@2.7.0/node_modules/node-fetch/lib/index.mjs"() {
     import_stream = __toESM(require("stream"), 1);
     import_http = __toESM(require("http"), 1);
     import_url = __toESM(require("url"), 1);
@@ -8623,9 +8638,13 @@ var determineBaseAndHead = (context2) => {
       base = context2.payload.before;
       head = context2.payload.after;
       break;
+    case "merge_group":
+      base = context2.payload.merge_group?.base_sha;
+      head = context2.payload.merge_group?.head_sha;
+      break;
     default:
       throw new Error(
-        `This action only supports pull requests and pushes, ${context2.eventName} events are not supported. Please submit an issue on this action's GitHub repo if you believe this in correct.`
+        `This action only supports pull requests, pushes and merge_groups. ${context2.eventName} events are not supported. Please submit an issue on this action's GitHub repo if you believe this in correct.`
       );
   }
   if (!base || !head) {
