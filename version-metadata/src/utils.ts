@@ -201,7 +201,7 @@ const determineBaseAndHead = (context: Context) => {
       break
     default:
       throw new Error(
-        `This action only supports pull requests and pushes, ${context.eventName} events are not supported. ` +
+        `This action only supports pull requests, pushes merge_groups. ${context.eventName} events are not supported. ` +
           "Please submit an issue on this action's GitHub repo if you believe this in correct."
       )
   }

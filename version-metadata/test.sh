@@ -4,7 +4,7 @@ DEBUG=0
 
 export MOCKING=1
 export GITHUB_REPOSITORY="Quantco/ui-actions"
-export GITHUB_EVENT_NAME="merge_group" # can also be "push"
+export GITHUB_EVENT_NAME="pull_request" # can also be "push", or "merge_group"
 # for the base this should be an actual SHA as this is value is compared to commit SHAs
 # using "main" or something similar might break certain things
 # shortened SHAs are fine though
