@@ -120,6 +120,9 @@ With step id `version` you'll find the outputs at `steps.version.outputs.OUTPUT_
   run: 'echo "Version has not changed"'
 ```
 
+If the action cannot extract the version number for a commit it defaults to `0.0.0` as it is assumed that the `package.json` file just hasn't existed at that point (works with custom version extraction as well).
+This would for example be the case if you add a new subproject to a monorepo in one PR including `package.json` and CI workflow changes.
+Something like this shouldn't break your CI workflow and still output the wanted version number, thus the fallback.
 
 ## Examples
 

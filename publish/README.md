@@ -130,7 +130,17 @@ Be sure to replace `<YOUR PACKAGE NAME>` with your own package.
 
 - name: Determine last published version
   run: |
-    echo "CI_PUBLISHED_VERSION=$(npm show <YOUR PACKAGE NAME> version)" >> $GITHUB_ENV
+    set +e # disable pipefail, errors are handled manually below
+    # get version or exit with non-zero exit code if the package doesn't exist (yet)
+    version=$(npm show <YOUR PACKAGE NAME> version)
+
+    if [ $? -eq 0 ]
+    then
+      echo "CI_PUBLISHED_VERSION=$version" >> $GITHUB_ENV
+    else
+      # fall back to `0.0.0` if the package hasn't been published before
+      echo "CI_PUBLISHED_VERSION=0.0.0" >> $GITHUB_ENV
+    fi
   env:
     # required for private GPR packages
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

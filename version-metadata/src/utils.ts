@@ -171,7 +171,7 @@ const computeResponseFromChanges = (
 /**
  * Determines the base and head commits from the payload
  *
- * This is necessary because the payload for pull requests and pushes are different
+ * This is necessary because the payload for pull requests, pushes and merge queues are different
  *
  * For PRs:
  * - context.payload.pull_request?.base?.sha
@@ -180,6 +180,10 @@ const computeResponseFromChanges = (
  * For pushes:
  * - context.payload.before
  * - context.payload.after
+ *
+ * For merge queues:
+ * - context.payload.merge_group?.base_sha
+ * - context.payload.merge_group?.head_sha
  */
 const determineBaseAndHead = (context: Context) => {
   // Define the base and head commits to be extracted from the payload.
@@ -195,9 +199,13 @@ const determineBaseAndHead = (context: Context) => {
       base = context.payload.before
       head = context.payload.after
       break
+    case 'merge_group':
+      base = context.payload.merge_group?.base_sha
+      head = context.payload.merge_group?.head_sha
+      break
     default:
       throw new Error(
-        `This action only supports pull requests and pushes, ${context.eventName} events are not supported. ` +
+        `This action only supports pull requests, pushes and merge_groups. ${context.eventName} events are not supported. ` +
           "Please submit an issue on this action's GitHub repo if you believe this in correct."
       )
   }

@@ -23,7 +23,9 @@ Nevertheless here's a minimal example of these actions in use.
 
 - name: Determine last published version
   run: |
-    echo "CI_PUBLISHED_VERSION=$(npm show <YOUR PACKAGE NAME> version)" >> $GITHUB_ENV
+    set +e # disable pipefail, error handling is done manually below
+    # get version or fall back to `0.0.0` if the package doesn't exist (yet)
+    echo "CI_PUBLISHED_VERSION=$(npm show <YOUR PACKAGE NAME> version || echo "0.0.0")" >> $GITHUB_ENV
   env:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

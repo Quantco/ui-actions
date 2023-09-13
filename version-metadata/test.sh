@@ -4,7 +4,7 @@ DEBUG=0
 
 export MOCKING=1
 export GITHUB_REPOSITORY="Quantco/ui-actions"
-export GITHUB_EVENT_NAME="pull_request" # can also be "push"
+export GITHUB_EVENT_NAME="pull_request" # can also be "push", or "merge_group"
 # for the base this should be an actual SHA as this is value is compared to commit SHAs
 # using "main" or something similar might break certain things
 # shortened SHAs are fine though
@@ -18,6 +18,7 @@ export INPUT_FILE="./version-metadata/package.json" # maps to `file` input in ac
 
 # eventName = pull_request: `pull_request.base.sha`` and `pull_request.head.sha`
 # eventName = push:         `before` and `after`
+# eventName = merge_group:  `merge_group.base_sha` and `merge_group.head_sha`
 rm payload.json
 cat <<EOF > ./payload.json
 {
@@ -30,7 +31,11 @@ cat <<EOF > ./payload.json
     }
   },
   "before": "$GITHUB_BASE",
-  "after": "$GITHUB_HEAD"
+  "after": "$GITHUB_HEAD",
+  "merge_group": {
+    "base_sha": "$GITHUB_BASE",
+    "head_sha": "$GITHUB_HEAD"
+  }
 }
 EOF
 
