@@ -33,9 +33,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/utils.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/utils.js
 var require_utils = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/utils.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/utils.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.toCommandProperties = exports.toCommandValue = void 0;
@@ -65,9 +65,9 @@ var require_utils = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/command.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/command.js
 var require_command = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/command.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/command.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -485,9 +485,9 @@ var init_esm_node = __esm({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/file-command.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/file-command.js
 var require_file_command = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/file-command.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/file-command.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -551,9 +551,9 @@ var require_file_command = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/proxy.js
+// ../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/proxy.js
 var require_proxy = __commonJS({
-  "../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/proxy.js"(exports) {
+  "../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/proxy.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.checkBypass = exports.getProxyUrl = void 0;
@@ -570,7 +570,12 @@ var require_proxy = __commonJS({
         }
       })();
       if (proxyVar) {
-        return new URL(proxyVar);
+        try {
+          return new URL(proxyVar);
+        } catch (_a) {
+          if (!proxyVar.startsWith("http://") && !proxyVar.startsWith("https://"))
+            return new URL(`http://${proxyVar}`);
+        }
       } else {
         return void 0;
       }
@@ -852,9 +857,9 @@ var require_tunnel2 = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/index.js
+// ../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/index.js
 var require_lib = __commonJS({
-  "../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/index.js"(exports) {
+  "../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/index.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -998,6 +1003,19 @@ var require_lib = __commonJS({
             });
             this.message.on("end", () => {
               resolve(output.toString());
+            });
+          }));
+        });
+      }
+      readBodyBuffer() {
+        return __awaiter(this, void 0, void 0, function* () {
+          return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+            const chunks = [];
+            this.message.on("data", (chunk) => {
+              chunks.push(chunk);
+            });
+            this.message.on("end", () => {
+              resolve(Buffer.concat(chunks));
             });
           }));
         });
@@ -1432,9 +1450,9 @@ var require_lib = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/auth.js
+// ../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/auth.js
 var require_auth = __commonJS({
-  "../node_modules/.pnpm/@actions+http-client@2.1.0/node_modules/@actions/http-client/lib/auth.js"(exports) {
+  "../node_modules/.pnpm/@actions+http-client@2.1.1/node_modules/@actions/http-client/lib/auth.js"(exports) {
     "use strict";
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -1536,9 +1554,9 @@ var require_auth = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/oidc-utils.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/oidc-utils.js
 var require_oidc_utils = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/oidc-utils.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/oidc-utils.js"(exports) {
     "use strict";
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -1603,7 +1621,7 @@ var require_oidc_utils = __commonJS({
  
         Error Code : ${error.statusCode}
  
-        Error Message: ${error.result.message}`);
+        Error Message: ${error.message}`);
           });
           const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
           if (!id_token) {
@@ -1634,9 +1652,9 @@ var require_oidc_utils = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/summary.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/summary.js
 var require_summary = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/summary.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/summary.js"(exports) {
     "use strict";
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -1928,9 +1946,9 @@ var require_summary = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/path-utils.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/path-utils.js
 var require_path_utils = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/path-utils.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/path-utils.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -1978,9 +1996,9 @@ var require_path_utils = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/core.js
+// ../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/core.js
 var require_core = __commonJS({
-  "../node_modules/.pnpm/@actions+core@1.10.0/node_modules/@actions/core/lib/core.js"(exports) {
+  "../node_modules/.pnpm/@actions+core@1.10.1/node_modules/@actions/core/lib/core.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
       if (k2 === void 0)
@@ -4565,7 +4583,7 @@ var require_public_api = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/node-fetch@2.6.12/node_modules/node-fetch/lib/index.mjs
+// ../node_modules/.pnpm/node-fetch@2.7.0/node_modules/node-fetch/lib/index.mjs
 function FetchError(message, type, systemError) {
   Error.call(this, message);
   this.message = message;
@@ -4917,9 +4935,6 @@ function getNodeRequestOptions(request2) {
   if (typeof agent === "function") {
     agent = agent(parsedURL);
   }
-  if (!headers.has("Connection") && !agent) {
-    headers.set("Connection", "close");
-  }
   return Object.assign({}, parsedURL, {
     method: request2.method,
     headers: exportNodeCompatibleHeaders(headers),
@@ -5167,7 +5182,7 @@ function destroyStream(stream, err) {
 }
 var import_stream, import_http, import_url, import_whatwg_url, import_https, import_zlib, Readable, BUFFER, TYPE, Blob, convert, INTERNALS, PassThrough, invalidTokenRegex, invalidHeaderCharRegex, MAP, Headers, INTERNAL, HeadersIteratorPrototype, INTERNALS$1, STATUS_CODES, Response, INTERNALS$2, URL3, parse_url, format_url, streamDestructionSupported, Request, URL$1, PassThrough$1, isDomainOrSubdomain, isSameProtocol, lib_default;
 var init_lib = __esm({
-  "../node_modules/.pnpm/node-fetch@2.6.12/node_modules/node-fetch/lib/index.mjs"() {
+  "../node_modules/.pnpm/node-fetch@2.7.0/node_modules/node-fetch/lib/index.mjs"() {
     import_stream = __toESM(require("stream"), 1);
     import_http = __toESM(require("http"), 1);
     import_url = __toESM(require("url"), 1);
@@ -9487,7 +9502,7 @@ ${innerText}
   return template(reason);
 };
 
-// ../node_modules/.pnpm/zod@3.21.4/node_modules/zod/lib/index.mjs
+// ../node_modules/.pnpm/zod@3.22.2/node_modules/zod/lib/index.mjs
 var util;
 (function(util2) {
   util2.assertEqual = (val) => val;
@@ -9905,7 +9920,7 @@ var ParseStatus = class {
         status.dirty();
       if (value.status === "dirty")
         status.dirty();
-      if (typeof value.value !== "undefined" || pair.alwaysSet) {
+      if (key.value !== "__proto__" && (typeof value.value !== "undefined" || pair.alwaysSet)) {
         finalObject[key.value] = value.value;
       }
     }
@@ -10008,6 +10023,7 @@ var ZodType = class {
     this.catch = this.catch.bind(this);
     this.describe = this.describe.bind(this);
     this.pipe = this.pipe.bind(this);
+    this.readonly = this.readonly.bind(this);
     this.isNullable = this.isNullable.bind(this);
     this.isOptional = this.isOptional.bind(this);
   }
@@ -10215,6 +10231,9 @@ var ZodType = class {
   pipe(target) {
     return ZodPipeline.create(this, target);
   }
+  readonly() {
+    return ZodReadonly.create(this);
+  }
   isOptional() {
     return this.safeParse(void 0).success;
   }
@@ -10225,8 +10244,8 @@ var ZodType = class {
 var cuidRegex = /^c[^\s-]{8,}$/i;
 var cuid2Regex = /^[a-z][a-z0-9]*$/;
 var ulidRegex = /[0-9A-HJKMNP-TV-Z]{26}/;
-var uuidRegex = /^([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}|00000000-0000-0000-0000-000000000000)$/i;
-var emailRegex = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\])|(\[IPv6:(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))\])|([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])*(\.[A-Za-z]{2,})+))$/;
+var uuidRegex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
+var emailRegex = /^([A-Z0-9_+-]+\.?)*[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
 var emojiRegex = /^(\p{Extended_Pictographic}|\p{Emoji_Component})+$/u;
 var ipv4Regex = /^(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))$/;
 var ipv6Regex = /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/;
@@ -12190,6 +12209,12 @@ var ZodRecord = class extends ZodType {
   }
 };
 var ZodMap = class extends ZodType {
+  get keySchema() {
+    return this._def.keyType;
+  }
+  get valueSchema() {
+    return this._def.valueType;
+  }
   _parse(input) {
     const { status, ctx } = this._processInputParams(input);
     if (ctx.parsedType !== ZodParsedType.map) {
@@ -12384,27 +12409,29 @@ var ZodFunction = class extends ZodType {
     const params = { errorMap: ctx.common.contextualErrorMap };
     const fn = ctx.data;
     if (this._def.returns instanceof ZodPromise) {
-      return OK(async (...args) => {
+      const me = this;
+      return OK(async function(...args) {
         const error = new ZodError([]);
-        const parsedArgs = await this._def.args.parseAsync(args, params).catch((e) => {
+        const parsedArgs = await me._def.args.parseAsync(args, params).catch((e) => {
           error.addIssue(makeArgsIssue(args, e));
           throw error;
         });
-        const result = await fn(...parsedArgs);
-        const parsedReturns = await this._def.returns._def.type.parseAsync(result, params).catch((e) => {
+        const result = await Reflect.apply(fn, this, parsedArgs);
+        const parsedReturns = await me._def.returns._def.type.parseAsync(result, params).catch((e) => {
           error.addIssue(makeReturnsIssue(result, e));
           throw error;
         });
         return parsedReturns;
       });
     } else {
-      return OK((...args) => {
-        const parsedArgs = this._def.args.safeParse(args, params);
+      const me = this;
+      return OK(function(...args) {
+        const parsedArgs = me._def.args.safeParse(args, params);
         if (!parsedArgs.success) {
           throw new ZodError([makeArgsIssue(args, parsedArgs.error)]);
         }
-        const result = fn(...parsedArgs.data);
-        const parsedReturns = this._def.returns.safeParse(result, params);
+        const result = Reflect.apply(fn, this, parsedArgs.data);
+        const parsedReturns = me._def.returns.safeParse(result, params);
         if (!parsedReturns.success) {
           throw new ZodError([makeReturnsIssue(result, parsedReturns.error)]);
         }
@@ -12626,8 +12653,28 @@ var ZodEffects = class extends ZodType {
   _parse(input) {
     const { status, ctx } = this._processInputParams(input);
     const effect = this._def.effect || null;
+    const checkCtx = {
+      addIssue: (arg) => {
+        addIssueToContext(ctx, arg);
+        if (arg.fatal) {
+          status.abort();
+        } else {
+          status.dirty();
+        }
+      },
+      get path() {
+        return ctx.path;
+      }
+    };
+    checkCtx.addIssue = checkCtx.addIssue.bind(checkCtx);
     if (effect.type === "preprocess") {
-      const processed = effect.transform(ctx.data);
+      const processed = effect.transform(ctx.data, checkCtx);
+      if (ctx.common.issues.length) {
+        return {
+          status: "dirty",
+          value: ctx.data
+        };
+      }
       if (ctx.common.async) {
         return Promise.resolve(processed).then((processed2) => {
           return this._def.schema._parseAsync({
@@ -12644,20 +12691,6 @@ var ZodEffects = class extends ZodType {
         });
       }
     }
-    const checkCtx = {
-      addIssue: (arg) => {
-        addIssueToContext(ctx, arg);
-        if (arg.fatal) {
-          status.abort();
-        } else {
-          status.dirty();
-        }
-      },
-      get path() {
-        return ctx.path;
-      }
-    };
-    checkCtx.addIssue = checkCtx.addIssue.bind(checkCtx);
     if (effect.type === "refinement") {
       const executeRefinement = (acc) => {
         const result = effect.refinement(acc, checkCtx);
@@ -12941,6 +12974,22 @@ var ZodPipeline = class extends ZodType {
     });
   }
 };
+var ZodReadonly = class extends ZodType {
+  _parse(input) {
+    const result = this._def.innerType._parse(input);
+    if (isValid(result)) {
+      result.value = Object.freeze(result.value);
+    }
+    return result;
+  }
+};
+ZodReadonly.create = (type, params) => {
+  return new ZodReadonly({
+    innerType: type,
+    typeName: ZodFirstPartyTypeKind.ZodReadonly,
+    ...processCreateParams(params)
+  });
+};
 var late = {
   object: ZodObject.lazycreate
 };
@@ -12981,6 +13030,7 @@ var ZodFirstPartyTypeKind;
   ZodFirstPartyTypeKind2["ZodPromise"] = "ZodPromise";
   ZodFirstPartyTypeKind2["ZodBranded"] = "ZodBranded";
   ZodFirstPartyTypeKind2["ZodPipeline"] = "ZodPipeline";
+  ZodFirstPartyTypeKind2["ZodReadonly"] = "ZodReadonly";
 })(ZodFirstPartyTypeKind || (ZodFirstPartyTypeKind = {}));
 var stringType = ZodString.create;
 var numberType = ZodNumber.create;
