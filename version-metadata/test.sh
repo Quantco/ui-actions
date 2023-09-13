@@ -18,6 +18,7 @@ export INPUT_FILE="./version-metadata/package.json" # maps to `file` input in ac
 
 # eventName = pull_request: `pull_request.base.sha`` and `pull_request.head.sha`
 # eventName = push:         `before` and `after`
+# eventName = merge_group:  `merge_group.base_sha` and `merge_group.head_sha`
 rm payload.json
 cat <<EOF > ./payload.json
 {
