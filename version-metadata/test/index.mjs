@@ -22,6 +22,19 @@ const tests = [
     }
   },
   {
+    description: 'Handles "missing" / all zeroes `before` value correctly on push',
+    base: '0000000000000000000000000000000000000000',
+    head: '4cedd64e7615d69f7bcd229fc960d3e1a6f4b496',
+    repo: 'Quantco/ui-actions',
+    event: 'push',
+    file: 'version-metadata/package.json',
+    expected: {
+      changed: true,
+      oldVersion: '1.0.11',
+      newVersion: '1.0.12'
+    }
+  },
+  {
     description:
       'fallback 0.0.0 version works with custom extractors (https://github.com/Quantco/slim-trees/actions/runs/5436331701/jobs/9886105283)',
     base: 'a30c62ac7f10f68aacc9ba5259246cae0056cc6d',
