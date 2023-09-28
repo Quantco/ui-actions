@@ -1,5 +1,6 @@
 import { spawnSync } from 'child_process'
 import type { Context } from '@actions/github/lib/context'
+import type { getOctokit } from '@actions/github'
 
 export type VersionDiffType = 'major' | 'minor' | 'patch' | 'pre-release'
 
@@ -178,12 +179,14 @@ const computeResponseFromChanges = (
  * - context.payload.pull_request?.head?.sha
  *
  * For pushes:
- * - context.payload.before
+ * - context.payload.before (*)
  * - context.payload.after
  *
  * For merge queues:
  * - context.payload.merge_group?.base_sha
  * - context.payload.merge_group?.head_sha
+ *
+ * (*): For pushes which create a new branch, context.payload.before is all zeroes (40 to be exact), in this case base is returned as undefined
  */
 const determineBaseAndHead = (context: Context) => {
   // Define the base and head commits to be extracted from the payload.
@@ -198,6 +201,13 @@ const determineBaseAndHead = (context: Context) => {
     case 'push':
       base = context.payload.before
       head = context.payload.after
+
+      // when pushing a new branch, the case commit sha is all zeroes (40 to be exact)
+      // don't think this is all too correct but it's what the payload looks like
+      // (additionally the GITHUB_BASE_REF env variable is empty)
+      if (base === '0'.repeat(40)) {
+        base = undefined
+      }
       break
     case 'merge_group':
       base = context.payload.merge_group?.base_sha
@@ -211,7 +221,7 @@ const determineBaseAndHead = (context: Context) => {
   }
 
   // Ensure that the base and head properties are set on the payload.
-  if (!base || !head) {
+  if (!head) {
     throw new Error(
       `The base and head commits are missing from the payload for this ${context.eventName} event. ` +
         "Please submit an issue on this action's GitHub repo."
@@ -220,6 +230,20 @@ const determineBaseAndHead = (context: Context) => {
 
   return { base, head }
 }
+
+/**
+ * Gets the SHA of the (first) parent commit of a commit
+ *
+ * This assumes that only one parent exists for the specified commit.
+ */
+const getParentCommitSha = (octokit: ReturnType<typeof getOctokit>, context: Context, ref: string) =>
+  octokit.rest.repos
+    .getCommit({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      ref
+    })
+    .then((res) => res.data.parents[0].sha)
 
 /**
  * deduplicates consecutive elements in an array
@@ -379,6 +403,7 @@ export {
   getSemverDiffType,
   computeResponseFromChanges,
   determineBaseAndHead,
+  getParentCommitSha,
   deduplicateConsecutive,
   categorizeChangedFiles,
   parseVersionFromFileContents

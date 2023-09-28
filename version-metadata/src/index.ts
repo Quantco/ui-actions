@@ -5,6 +5,7 @@ import {
   getSemverDiffType,
   computeResponseFromChanges,
   determineBaseAndHead,
+  getParentCommitSha,
   deduplicateConsecutive,
   categorizeChangedFiles,
   parseVersionFromFileContents
@@ -96,10 +97,22 @@ async function run(): Promise<VersionMetadataResponse> {
   // all resolved correctly, just not "the bigger picture" (meaning all useful types in one place).
   const octokit = getOctokit(token)
 
-  const { base, head } = determineBaseAndHead(context)
+  const { base: maybeBase, head } = determineBaseAndHead(context)
+
+  if (maybeBase === undefined) {
+    core.info(`no base commit found, assuming this is a new branch, fetching parent commit of ${head} from api`)
+  }
+
+  const base =
+    maybeBase === undefined
+      ? await getParentCommitSha(octokit, context, head).catch((error) => {
+          throw new Error(`could not retrieve parent commit of ${head}: ${error.message}`)
+        })
+      : maybeBase
 
   core.info(`base SHA: ${base}`)
   core.info(`head SHA: ${head}`)
+
   if (extractionMethod.type === 'command') {
     core.info(`version extraction command: ${extractionMethod.command}`)
   }
