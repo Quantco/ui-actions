@@ -8637,6 +8637,9 @@ var determineBaseAndHead = (context2) => {
     case "push":
       base = context2.payload.before;
       head = context2.payload.after;
+      if (base === "0".repeat(40)) {
+        base = void 0;
+      }
       break;
     case "merge_group":
       base = context2.payload.merge_group?.base_sha;
@@ -8647,13 +8650,18 @@ var determineBaseAndHead = (context2) => {
         `This action only supports pull requests, pushes and merge_groups. ${context2.eventName} events are not supported. Please submit an issue on this action's GitHub repo if you believe this in correct.`
       );
   }
-  if (!base || !head) {
+  if (!head) {
     throw new Error(
       `The base and head commits are missing from the payload for this ${context2.eventName} event. Please submit an issue on this action's GitHub repo.`
     );
   }
   return { base, head };
 };
+var getParentCommitSha = (octokit, context2, ref) => octokit.rest.repos.getCommit({
+  owner: context2.repo.owner,
+  repo: context2.repo.repo,
+  ref
+}).then((res) => res.data.parents[0].sha);
 var deduplicateConsecutive = (accessor) => (acc, curr) => {
   const value = accessor(curr);
   if (!value)
@@ -8833,7 +8841,13 @@ error: ${error}`
 }
 async function run() {
   const octokit = (0, import_github.getOctokit)(token);
-  const { base, head } = determineBaseAndHead(import_github.context);
+  const { base: maybeBase, head } = determineBaseAndHead(import_github.context);
+  if (maybeBase === void 0) {
+    core.info(`no base commit found, assuming this is a new branch, fetching parent commit of ${head} from api`);
+  }
+  const base = maybeBase === void 0 ? await getParentCommitSha(octokit, import_github.context, head).catch((error) => {
+    throw new Error(`could not retrieve parent commit of ${head}: ${error.message}`);
+  }) : maybeBase;
   core.info(`base SHA: ${base}`);
   core.info(`head SHA: ${head}`);
   if (extractionMethod.type === "command") {
