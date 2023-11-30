@@ -47,7 +47,7 @@ outputs:
     description: all of the above as stringified JSON (as you'd otherwise have to combine things back together again)
 
 runs:
-  using: node16
+  using: node20
   main: 'dist/index.js'
 
 branding:
