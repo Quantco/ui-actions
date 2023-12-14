@@ -150,6 +150,7 @@ async function run(): Promise<VersionMetadataResponse> {
     const parents = commit.parents.map((p) => p.sha)
 
     if (parents.length === 0) {
+      commits.push({ sha: null, commit: { message: `<artificial parent commit for ${commit.sha}>` } })
       commits.push(commit)
       continue
     }
@@ -169,7 +170,7 @@ async function run(): Promise<VersionMetadataResponse> {
 
   core.startGroup('commits')
   commits.forEach((commit) => {
-    core.info(`- ${commit.sha}: ${commit.commit.message.split('\n')[0].trim()}`)
+    core.info(`- ${commit.sha || '<null>'}: ${commit.commit.message.split('\n')[0].trim()}`)
   })
   core.endGroup()
 
@@ -196,7 +197,11 @@ async function run(): Promise<VersionMetadataResponse> {
 
   core.debug('all iterations of package.json:')
   maybeAllIterationsOfPackageJson.forEach((iteration) => {
-    core.debug(`- ${iteration.sha}: ${JSON.stringify(iteration.response)}${iteration.isFallback ? ' (fallback)' : ''}`)
+    core.debug(
+      `- ${iteration.sha || '<null>'}: ${JSON.stringify(iteration.response)}${
+        iteration.isFallback ? ' (fallback)' : ''
+      }`
+    )
   })
 
   const failedRequests = maybeAllIterationsOfPackageJson.filter(({ response }) => response.status !== 200)
@@ -260,7 +265,7 @@ async function run(): Promise<VersionMetadataResponse> {
 
   core.startGroup('all versions of package.json')
   deduplicatedVersions.forEach(({ sha, version }) => {
-    core.info(`- ${sha}: ${version}`)
+    core.info(`- ${sha || '<null>'}: ${version}`)
   })
   core.endGroup()
 
@@ -285,7 +290,7 @@ async function run(): Promise<VersionMetadataResponse> {
     { list: [] as VersionChange[], last: undefined as { version: string; sha: string } | undefined }
   ).list
 
-  return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base || '<undefined>', head)
+  return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base || '<null>', head)
 }
 
 run()
