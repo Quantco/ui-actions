@@ -8,7 +8,8 @@ import {
   getParentCommitSha,
   deduplicateConsecutive,
   categorizeChangedFiles,
-  parseVersionFromFileContents
+  parseVersionFromFileContents,
+  compareCommits
 } from './utils'
 import type { VersionDiffType, VersionChange, VersionMetadataResponse } from './utils'
 
@@ -106,7 +107,10 @@ async function run(): Promise<VersionMetadataResponse> {
   const base =
     maybeBase === undefined
       ? await getParentCommitSha(octokit, context, head).catch((error) => {
-          throw new Error(`could not retrieve parent commit of ${head}: ${error.message}`)
+          core.error(
+            `could not retrieve parent commit of ${head}: ${error.message}\nthis can either be an error or this is the initial commit of your repository, continuing and assuming the latter`
+          )
+          return undefined
         })
       : maybeBase
 
@@ -120,13 +124,7 @@ async function run(): Promise<VersionMetadataResponse> {
     core.info(`version extraction regex: ${extractionMethod.regex}`)
   }
 
-  // a lot of metadata about the files changed in between the base and head commits, the commits in between themselves, ...
-  const commitDiff = await octokit.rest.repos.compareCommits({
-    base,
-    head,
-    owner: context.repo.owner,
-    repo: context.repo.repo
-  })
+  const commitDiff = await compareCommits(octokit, context, base, head)
 
   // all changed files, categorized by type (added, modified, removed, renamed)
   const changedFiles = commitDiff.data.files
@@ -150,14 +148,22 @@ async function run(): Promise<VersionMetadataResponse> {
   const commits = []
   for (const commit of unfilteredCommits) {
     const parents = commit.parents.map((p) => p.sha)
-    if (parents.length === 1 || commit.sha.startsWith(base)) {
+
+    if (parents.length === 0) {
       commits.push(commit)
+      continue
+    }
+
+    if (parents.length === 1 || commit.sha.startsWith(base as string)) {
+      commits.push(commit)
+      continue
     }
 
     // "merged main into ..."
     const parentOfInterest = parents[0]
     if (commits[commits.length - 1].sha === parentOfInterest) {
       commits.push(commit)
+      continue
     }
   }
 
@@ -279,7 +285,7 @@ async function run(): Promise<VersionMetadataResponse> {
     { list: [] as VersionChange[], last: undefined as { version: string; sha: string } | undefined }
   ).list
 
-  return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base, head)
+  return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base || '<undefined>', head)
 }
 
 run()

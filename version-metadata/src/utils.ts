@@ -4,6 +4,14 @@ import type { getOctokit } from '@actions/github'
 
 export type VersionDiffType = 'major' | 'minor' | 'patch' | 'pre-release'
 
+export type Unpromise<T> = T extends Promise<infer U> ? U : never
+export type Commit = Unpromise<ReturnType<ReturnType<typeof getOctokit>['rest']['repos']['getCommit']>>['data']
+
+type File = {
+  status: 'added' | 'modified' | 'removed' | 'renamed' | 'copied' | 'changed' | 'unchanged'
+  filename: string
+}
+
 export type CategorizedChangedFiles = {
   all: string[]
   added: string[]
@@ -208,6 +216,14 @@ const determineBaseAndHead = (context: Context) => {
       if (base === '0'.repeat(40)) {
         base = undefined
       }
+
+      // this happens when head has no parents
+      // this (normally) only happens when creating a repo (initial commit), but can in theory happen more often
+      // (the linux kernel has 4 commits without parents: https://www.destroyallsoftware.com/blog/2017/the-biggest-and-weirdest-commits-in-linux-kernel-git-history)
+      if (base === '') {
+        base = undefined
+      }
+
       break
     case 'merge_group':
       base = context.payload.merge_group?.base_sha
@@ -231,19 +247,76 @@ const determineBaseAndHead = (context: Context) => {
   return { base, head }
 }
 
-/**
- * Gets the SHA of the (first) parent commit of a commit
- *
- * This assumes that only one parent exists for the specified commit.
- */
-const getParentCommitSha = (octokit: ReturnType<typeof getOctokit>, context: Context, ref: string) =>
+const getCommit = (octokit: ReturnType<typeof getOctokit>, context: Context, ref: string) =>
   octokit.rest.repos
     .getCommit({
       owner: context.repo.owner,
       repo: context.repo.repo,
       ref
     })
-    .then((res) => res.data.parents[0].sha)
+    .then((res) => res.data)
+
+/**
+ * Gets the SHA of the (first) parent commit of a commit
+ *
+ * This assumes that only one parent exists for the specified commit.
+ */
+const getParentCommitSha = (octokit: ReturnType<typeof getOctokit>, context: Context, ref: string) =>
+  getCommit(octokit, context, ref).then((res) => {
+    if (res.parents.length === 0) {
+      throw new Error(`Commit ${ref} has no parents`)
+    }
+
+    return res.parents[0].sha
+  })
+
+type CompareCommitsResult = {
+  data: {
+    base_commit: Commit
+    commits: Commit[]
+    files?: File[] | undefined
+  }
+}
+
+const compareCommits = async (
+  octokit: ReturnType<typeof getOctokit>,
+  context: Context,
+  base: string | undefined,
+  head: string
+): Promise<CompareCommitsResult> => {
+  if (base === undefined) {
+    let parents
+    let files
+    let commit
+    try {
+      const all = await getCommit(octokit, context, head)
+      parents = all.parents
+      files = all.files
+      commit = all
+    } catch (error) {
+      throw new Error(`Failed to get commit ${head}: ${error}`)
+    }
+
+    if (parents.length !== 0) {
+      throw new Error(`Expected commit ${head} to have no parents, but it has ${parents.length}`)
+    }
+
+    return {
+      data: {
+        base_commit: commit,
+        commits: [],
+        files
+      }
+    }
+  } else {
+    return await octokit.rest.repos.compareCommits({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      base,
+      head
+    })
+  }
+}
 
 /**
  * deduplicates consecutive elements in an array
@@ -264,12 +337,7 @@ const deduplicateConsecutive =
     return { list: [...acc.list, curr], last: value }
   }
 
-const categorizeChangedFiles = (
-  changedFiles: {
-    status: 'added' | 'modified' | 'removed' | 'renamed' | 'copied' | 'changed' | 'unchanged'
-    filename: string
-  }[]
-) => {
+const categorizeChangedFiles = (changedFiles: File[]) => {
   const all: string[] = []
   const added: string[] = []
   const modified: string[] = []
@@ -403,7 +471,9 @@ export {
   getSemverDiffType,
   computeResponseFromChanges,
   determineBaseAndHead,
+  getCommit,
   getParentCommitSha,
+  compareCommits,
   deduplicateConsecutive,
   categorizeChangedFiles,
   parseVersionFromFileContents
