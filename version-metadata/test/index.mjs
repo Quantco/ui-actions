@@ -22,6 +22,19 @@ const tests = [
     }
   },
   {
+    description: 'Works on initial commit',
+    base: '',
+    head: '46ea5e950b3f316954efd022174fa9871ce3a301',
+    repo: 'Quantco/ui-actions',
+    event: 'push',
+    file: './package.json',
+    expected: {
+      changed: true,
+      oldVersion: '0.0.0',
+      newVersion: '1.0.0'
+    }
+  },
+  {
     description: 'Handles "missing" / all zeroes `before` value correctly on push',
     base: '0000000000000000000000000000000000000000',
     head: '4cedd64e7615d69f7bcd229fc960d3e1a6f4b496',
