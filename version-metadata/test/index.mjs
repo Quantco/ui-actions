@@ -14,7 +14,7 @@ const tests = [
     head: 'b292c84af61b832207a4c360ded207462d588e4f',
     repo: 'Quantco/ui-actions',
     event: 'pull_request',
-    file: './version-metadata/package.json',
+    file: 'version-metadata/package.json',
     expected: {
       changed: true,
       oldVersion: '1.0.4',
@@ -23,15 +23,28 @@ const tests = [
   },
   {
     description: 'Works on initial commit',
-    base: '',
+    base: '0000000000000000000000000000000000000000',
     head: '46ea5e950b3f316954efd022174fa9871ce3a301',
     repo: 'Quantco/ui-actions',
     event: 'push',
-    file: './package.json',
+    file: 'package.json', // NOTE: this is using the root package.json instead of the version-metadata/package.json, this is on purpose as the version-metadata/package.json didn't exist back then
     expected: {
       changed: true,
       oldVersion: '0.0.0',
       newVersion: '1.0.0'
+    }
+  },
+  {
+    description: 'Works on new ref (multiple commits)', // TODO: this only works if the branches still exist; needs to be replaced with a manually created branch that isn't getting deleted
+    base: '0000000000000000000000000000000000000000',
+    head: '306ff2d7e80b8a7c58cba04a97232bd533973972',
+    repo: 'Quantco/ui-actions',
+    event: 'push',
+    file: 'version-metadata/package.json',
+    expected: {
+      changed: true,
+      oldVersion: '1.0.13',
+      newVersion: '1.0.14'
     }
   },
   {
@@ -43,7 +56,7 @@ const tests = [
     file: 'version-metadata/package.json',
     expected: {
       changed: true,
-      oldVersion: '1.0.11',
+      oldVersion: '0.0.0', // will backtrack all the way to the initial commit because the branch split off from main (i.e. main at some point in time) does not exist anymore; thus 0.0.0 fallback
       newVersion: '1.0.12'
     }
   },
@@ -54,7 +67,7 @@ const tests = [
     head: '951ea5cb02e9a44f28950e32905cfc269607e806',
     repo: 'Quantco/slim-trees',
     event: 'pull_request',
-    file: './pixi.toml',
+    file: 'pixi.toml',
     extractor: 'regex:version = "(.*)"',
     expected: {
       changed: true,
@@ -68,7 +81,7 @@ const tests = [
     head: '0329c748648fd2a56e5c04d6d219598bf07faffb',
     repo: 'Quantco/pnpm-licenses',
     event: 'pull_request',
-    file: './package.json',
+    file: 'package.json',
     expected: {
       changed: false,
       oldVersion: '1.0.0',

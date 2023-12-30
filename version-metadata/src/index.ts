@@ -5,7 +5,7 @@ import {
   getSemverDiffType,
   computeResponseFromChanges,
   determineBaseAndHead,
-  getParentCommitSha,
+  backtrackToFirstBranchRef,
   deduplicateConsecutive,
   categorizeChangedFiles,
   parseVersionFromFileContents,
@@ -98,21 +98,35 @@ async function run(): Promise<VersionMetadataResponse> {
   // all resolved correctly, just not "the bigger picture" (meaning all useful types in one place).
   const octokit = getOctokit(token)
 
-  const { base: maybeBase, head } = determineBaseAndHead(context)
+  let { base: maybeBase, head } = determineBaseAndHead(context)
+
+  let baseCommitIsIncludedInRange = true
 
   if (maybeBase === undefined) {
-    core.info(`no base commit found, assuming this is a new branch, fetching parent commit of ${head} from api`)
+    core.info(
+      `no base commit found, assuming this is a new branch or the initial commit to the repository, backtracking from ${head}`
+    )
+
+    // retrieve all existing branches and then start querying the commits starting from the known head commit
+    // walk backwards until a commit is found that is referenced in a branch that isn't the current one
+    // this commit will most likely be the point where the new ref was created from and is thus the base commit
+    // we are looking for
+    // this might not be the actual commit we are searching for if multiple refs get pushed at the same time
+    // (imagine pushing a whole subtree at a time instead of only a chain of commits)
+    // additionally check if we find a commit without parents, in this case we found an initial commit and have to
+    // do some more trickery (i.e. creating a sentinel element commit which acts as a parent for this initial commit)
+    const { sha, type } = await backtrackToFirstBranchRef(octokit, context, head)
+    if (type === 'initial') {
+      core.info(`found initial commit using backtracking from head commit: ${sha}`)
+      maybeBase = sha
+      baseCommitIsIncludedInRange = false
+    } else {
+      core.info(`found base commit using backtracking from head commit: ${sha}`)
+      maybeBase = sha
+    }
   }
 
-  const base =
-    maybeBase === undefined
-      ? await getParentCommitSha(octokit, context, head).catch((error) => {
-          core.error(
-            `could not retrieve parent commit of ${head}: ${error.message}\nthis can either be an error or this is the initial commit of your repository, continuing and assuming the latter`
-          )
-          return undefined
-        })
-      : maybeBase
+  const base = maybeBase
 
   core.info(`base SHA: ${base}`)
   core.info(`head SHA: ${head}`)
@@ -124,7 +138,7 @@ async function run(): Promise<VersionMetadataResponse> {
     core.info(`version extraction regex: ${extractionMethod.regex}`)
   }
 
-  const commitDiff = await compareCommits(octokit, context, base, head)
+  const commitDiff = await compareCommits(octokit, context, base, head, baseCommitIsIncludedInRange)
 
   // all changed files, categorized by type (added, modified, removed, renamed)
   const changedFiles = commitDiff.data.files
@@ -147,21 +161,19 @@ async function run(): Promise<VersionMetadataResponse> {
   // const commits = unfilteredCommits.filter((commit) => commit.parents.length === 1 || commit.sha.startsWith(base))
   const commits = []
   for (const commit of unfilteredCommits) {
-    const parents = commit.parents.map((p) => p.sha)
-
-    if (parents.length === 0) {
+    if (commit.parents.length === 0) {
       commits.push({ sha: null, commit: { message: `<artificial parent commit for ${commit.sha}>` } })
       commits.push(commit)
       continue
     }
 
-    if (parents.length === 1 || commit.sha.startsWith(base as string)) {
+    if (commit.parents.length === 1 || commit.sha.startsWith(base as string)) {
       commits.push(commit)
       continue
     }
 
     // "merged main into ..."
-    const parentOfInterest = parents[0]
+    const parentOfInterest = commit.parents[0].sha
     if (commits[commits.length - 1].sha === parentOfInterest) {
       commits.push(commit)
       continue
@@ -177,22 +189,36 @@ async function run(): Promise<VersionMetadataResponse> {
   // all versions of the package.json file in between the base and head commits
   // this has a lot of duplicates, as the file doesn't necessarily change in each commit
   const maybeAllIterationsOfPackageJson = await Promise.all(
-    commits.map((commit) =>
-      octokit.rest.repos
-        .getContent({ owner: context.repo.owner, repo: context.repo.repo, path: packageJsonFile, ref: commit.sha })
+    commits.map((commit) => {
+      // dummy response with a version of 0.0.0
+      const dummyResponse = {
+        status: 200,
+        data: {
+          content: Buffer.from(`{ "version": "0.0.0", "fallback_for_commit": "${commit.sha}" }`).toString('base64')
+        }
+      }
+
+      // if we find an artificial (parent) commit, we use the dummy response
+      if (commit.sha === null) {
+        return { sha: commit.sha, response: dummyResponse, isFallback: true }
+      }
+
+      return octokit.rest.repos
+        .getContent({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          path: packageJsonFile,
+          ref: commit.sha
+        })
         .then((response) => ({ sha: commit.sha, response, isFallback: false }))
         .catch((error) => {
           core.warning(
             `could not retrieve package.json file from commit ${commit.sha}: ${error.message}; falling back to 0.0.0 for this commit`
           )
 
-          // insert a dummy response with a version of 0.0.0 so that we can still continue
-          const fallbackBase64 = Buffer.from(`{ "version": "0.0.0", "fallback_for_commit": "${commit.sha}" }`).toString(
-            'base64'
-          )
-          return { sha: commit.sha, response: { status: 200, data: { content: fallbackBase64 } }, isFallback: true }
+          return { sha: commit.sha, response: dummyResponse, isFallback: true }
         })
-    )
+    })
   )
 
   core.debug('all iterations of package.json:')
