@@ -25,7 +25,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm build
 
-      - run: pnpm licenses list --filter "version-metadata" --prod --json | npx @quantco/pnpm-licenses generate-disclaimer --json-input --output-file version-metadata/dist/licenses.txt
+      - run: pnpm licenses list --filter "version-metadata" --prod --json | npx @quantco/pnpm-licenses generate-disclaimer --json-input --output-file dist/licenses.txt
 
       - name: Commit changes
         run: |
@@ -56,7 +56,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm build
 
-      - run: pnpm licenses list --filter "publish" --prod --json | npx @quantco/pnpm-licenses generate-disclaimer --json-input --output-file publish/dist/licenses.txt
+      - run: pnpm licenses list --filter "publish" --prod --json | npx @quantco/pnpm-licenses generate-disclaimer --json-input --output-file dist/licenses.txt
 
       - name: Commit changes
         run: |
