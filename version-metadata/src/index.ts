@@ -103,9 +103,10 @@ async function run(): Promise<VersionMetadataResponse> {
   let baseCommitIsIncludedInRange = true
 
   if (maybeBase === undefined) {
-    core.info(
-      `no base commit found, assuming this is a new branch or the initial commit to the repository, backtracking from ${head}`
+    core.warning(
+      `no base commit found, assuming this is a new branch or the initial commit to the repository, backtracking from ${head}.`
     )
+    core.warning('this can take a few seconds and might include more commits than expected')
 
     // retrieve all existing branches and then start querying the commits starting from the known head commit
     // walk backwards until a commit is found that is referenced in a branch that isn't the current one
