@@ -8430,11 +8430,83 @@ var determineBaseAndHead = (context2) => {
   }
   return { base, head };
 };
-var getParentCommitSha = (octokit, context2, ref) => octokit.rest.repos.getCommit({
-  owner: context2.repo.owner,
-  repo: context2.repo.repo,
-  ref
-}).then((res) => res.data.parents[0].sha);
+var backtrackToFirstBranchRef = async (octokit, context2, headSha) => {
+  const { data: allBranches } = await octokit.rest.repos.listBranches({
+    owner: context2.repo.owner,
+    repo: context2.repo.repo
+  });
+  const branches = allBranches.map((branch) => ({
+    name: branch.name,
+    sha: branch.commit.sha
+  })).filter((branch) => branch.sha !== headSha);
+  if (branches.length === 0) {
+    const { data: commit } = await octokit.rest.repos.getCommit({
+      owner: context2.repo.owner,
+      repo: context2.repo.repo,
+      ref: headSha
+    });
+    if (commit.parents.length === 0) {
+      return { sha: headSha, type: "initial" };
+    } else {
+      return { sha: commit.parents[0].sha, type: "normal" };
+    }
+  }
+  const it = octokit.paginate.iterator(octokit.rest.repos.listCommits, {
+    owner: context2.repo.owner,
+    repo: context2.repo.repo,
+    sha: headSha
+  });
+  for await (const { data: batch } of it) {
+    const maybeBaseCommit = batch.find((commit) => branches.some((branch) => branch.sha === commit.sha));
+    const initialCommit = batch.find((commit) => commit.parents.length === 0);
+    if (maybeBaseCommit) {
+      console.log("base commit", maybeBaseCommit.sha);
+      return { sha: maybeBaseCommit.sha, type: "normal" };
+    }
+    if (initialCommit) {
+      console.log("initial commit", initialCommit.sha);
+      return { sha: initialCommit.sha, type: "initial" };
+    }
+  }
+  throw new Error("Failed to find base commit");
+};
+var prependCommitToCommitComparison = (commit, comparison) => {
+  const x = (comparison.data.files ?? []).map(({ filename, status }) => [filename, status]);
+  const files = new Map(x);
+  if (commit.files) {
+    commit.files.forEach(({ filename, status: initialStatus }) => {
+      if (!files.has(filename)) {
+        files.set(filename, initialStatus);
+      }
+    });
+  }
+  return {
+    data: {
+      base_commit: commit,
+      commits: commit.sha === comparison.data.base_commit.sha ? comparison.data.commits : [comparison.data.base_commit, ...comparison.data.commits],
+      files: Array.from(files.entries()).map(([filename, status]) => ({ filename, status }))
+    }
+  };
+};
+var compareCommits = async (octokit, context2, base, head, rangeIncludesBase) => {
+  const comparison = await octokit.rest.repos.compareCommitsWithBasehead({
+    owner: context2.repo.owner,
+    repo: context2.repo.repo,
+    basehead: `${base}...${head}`
+  });
+  if (!rangeIncludesBase) {
+    try {
+      return await octokit.rest.repos.getCommit({
+        owner: context2.repo.owner,
+        repo: context2.repo.repo,
+        ref: base
+      }).then(({ data: commit }) => prependCommitToCommitComparison(commit, comparison));
+    } catch (error) {
+      throw new Error(`Failed to get commit ${head}: ${error}`);
+    }
+  }
+  return comparison;
+};
 var deduplicateConsecutive = (accessor) => (acc, curr) => {
   const value = accessor(curr);
   if (!value)
@@ -8608,13 +8680,24 @@ error: ${error}`
 }
 async function run() {
   const octokit = (0, import_github.getOctokit)(token);
-  const { base: maybeBase, head } = determineBaseAndHead(import_github.context);
+  let { base: maybeBase, head } = determineBaseAndHead(import_github.context);
+  let baseCommitIsIncludedInRange = true;
   if (maybeBase === void 0) {
-    core.info(`no base commit found, assuming this is a new branch, fetching parent commit of ${head} from api`);
+    core.warning(
+      `no base commit found, assuming this is a new branch or the initial commit to the repository, backtracking from ${head}.`
+    );
+    core.warning("this can take a few seconds and might include more commits than expected");
+    const { sha, type } = await backtrackToFirstBranchRef(octokit, import_github.context, head);
+    if (type === "initial") {
+      core.info(`found initial commit using backtracking from head commit: ${sha}`);
+      maybeBase = sha;
+      baseCommitIsIncludedInRange = false;
+    } else {
+      core.info(`found base commit using backtracking from head commit: ${sha}`);
+      maybeBase = sha;
+    }
   }
-  const base = maybeBase === void 0 ? await getParentCommitSha(octokit, import_github.context, head).catch((error) => {
-    throw new Error(`could not retrieve parent commit of ${head}: ${error.message}`);
-  }) : maybeBase;
+  const base = maybeBase;
   core.info(`base SHA: ${base}`);
   core.info(`head SHA: ${head}`);
   if (extractionMethod.type === "command") {
@@ -8623,12 +8706,7 @@ async function run() {
   if (extractionMethod.type === "regex") {
     core.info(`version extraction regex: ${extractionMethod.regex}`);
   }
-  const commitDiff = await octokit.rest.repos.compareCommits({
-    base,
-    head,
-    owner: import_github.context.repo.owner,
-    repo: import_github.context.repo.repo
-  });
+  const commitDiff = await compareCommits(octokit, import_github.context, base, head, baseCommitIsIncludedInRange);
   const changedFiles = commitDiff.data.files;
   if (!changedFiles) {
     throw new Error("could not retrieve files changed in between base and head commits, aborting");
@@ -8637,36 +8715,55 @@ async function run() {
   const unfilteredCommits = [commitDiff.data.base_commit, ...commitDiff.data.commits];
   const commits = [];
   for (const commit of unfilteredCommits) {
-    const parents = commit.parents.map((p) => p.sha);
-    if (parents.length === 1 || commit.sha.startsWith(base)) {
+    if (commit.parents.length === 0) {
+      commits.push({ sha: null, commit: { message: `<artificial parent commit for ${commit.sha}>` } });
       commits.push(commit);
+      continue;
     }
-    const parentOfInterest = parents[0];
+    if (commit.parents.length === 1 || commit.sha.startsWith(base)) {
+      commits.push(commit);
+      continue;
+    }
+    const parentOfInterest = commit.parents[0].sha;
     if (commits[commits.length - 1].sha === parentOfInterest) {
       commits.push(commit);
+      continue;
     }
   }
   core.startGroup("commits");
   commits.forEach((commit) => {
-    core.info(`- ${commit.sha}: ${commit.commit.message.split("\n")[0].trim()}`);
+    core.info(`- ${commit.sha || "<null>"}: ${commit.commit.message.split("\n")[0].trim()}`);
   });
   core.endGroup();
   const maybeAllIterationsOfPackageJson = await Promise.all(
-    commits.map(
-      (commit) => octokit.rest.repos.getContent({ owner: import_github.context.repo.owner, repo: import_github.context.repo.repo, path: packageJsonFile, ref: commit.sha }).then((response) => ({ sha: commit.sha, response, isFallback: false })).catch((error) => {
+    commits.map((commit) => {
+      const dummyResponse = {
+        status: 200,
+        data: {
+          content: Buffer.from(`{ "version": "0.0.0", "fallback_for_commit": "${commit.sha}" }`).toString("base64")
+        }
+      };
+      if (commit.sha === null) {
+        return { sha: commit.sha, response: dummyResponse, isFallback: true };
+      }
+      return octokit.rest.repos.getContent({
+        owner: import_github.context.repo.owner,
+        repo: import_github.context.repo.repo,
+        path: packageJsonFile,
+        ref: commit.sha
+      }).then((response) => ({ sha: commit.sha, response, isFallback: false })).catch((error) => {
         core.warning(
           `could not retrieve package.json file from commit ${commit.sha}: ${error.message}; falling back to 0.0.0 for this commit`
         );
-        const fallbackBase64 = Buffer.from(`{ "version": "0.0.0", "fallback_for_commit": "${commit.sha}" }`).toString(
-          "base64"
-        );
-        return { sha: commit.sha, response: { status: 200, data: { content: fallbackBase64 } }, isFallback: true };
-      })
-    )
+        return { sha: commit.sha, response: dummyResponse, isFallback: true };
+      });
+    })
   );
   core.debug("all iterations of package.json:");
   maybeAllIterationsOfPackageJson.forEach((iteration) => {
-    core.debug(`- ${iteration.sha}: ${JSON.stringify(iteration.response)}${iteration.isFallback ? " (fallback)" : ""}`);
+    core.debug(
+      `- ${iteration.sha || "<null>"}: ${JSON.stringify(iteration.response)}${iteration.isFallback ? " (fallback)" : ""}`
+    );
   });
   const failedRequests = maybeAllIterationsOfPackageJson.filter(({ response }) => response.status !== 200);
   if (failedRequests.length > 0) {
@@ -8705,7 +8802,7 @@ async function run() {
   ).list;
   core.startGroup("all versions of package.json");
   deduplicatedVersions.forEach(({ sha, version }) => {
-    core.info(`- ${sha}: ${version}`);
+    core.info(`- ${sha || "<null>"}: ${version}`);
   });
   core.endGroup();
   const oldVersion = deduplicatedVersions[0].version;
@@ -8725,7 +8822,7 @@ async function run() {
     },
     { list: [], last: void 0 }
   ).list;
-  return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base, head);
+  return computeResponseFromChanges(changes, changedFilesCategorized, oldVersion, base || "<null>", head);
 }
 run().then((response) => {
   core.setOutput("changed", String(response.changed));
