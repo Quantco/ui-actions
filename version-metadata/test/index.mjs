@@ -35,9 +35,9 @@ const tests = [
     }
   },
   {
-    description: 'Works on new ref (multiple commits)', // TODO: this only works if the branches still exist; needs to be replaced with a manually created branch that isn't getting deleted
+    description: 'Works on new ref (multiple commits)',
     base: '0000000000000000000000000000000000000000',
-    head: '306ff2d7e80b8a7c58cba04a97232bd533973972',
+    head: '306ff2d7e80b8a7c58cba04a97232bd533973972', // NOTE: branch was created and is called testcase-dont-delete-backtrack-ref
     repo: 'Quantco/ui-actions',
     event: 'push',
     file: 'version-metadata/package.json',
