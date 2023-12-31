@@ -25,6 +25,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm build
 
+      - run: pnpm licenses list --filter "version-metadata" --prod --json | npx @quantco/pnpm-licenses generate-disclaimer --json-input --output-file version-metadata/dist/licenses.txt
+
       - name: Commit changes
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -53,6 +55,8 @@ jobs:
       - run: pnpm install
       - run: pnpm lint
       - run: pnpm build
+
+      - run: pnpm licenses list --filter "publish" --prod --json | npx @quantco/pnpm-licenses generate-disclaimer --json-input --output-file publish/dist/licenses.txt
 
       - name: Commit changes
         run: |
