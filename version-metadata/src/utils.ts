@@ -4,6 +4,14 @@ import type { getOctokit } from '@actions/github'
 
 export type VersionDiffType = 'major' | 'minor' | 'patch' | 'pre-release'
 
+export type Unpromise<T> = T extends Promise<infer U> ? U : never
+export type Commit = Unpromise<ReturnType<ReturnType<typeof getOctokit>['rest']['repos']['getCommit']>>['data']
+
+type File = {
+  status: 'added' | 'modified' | 'removed' | 'renamed' | 'copied' | 'changed' | 'unchanged'
+  filename: string
+}
+
 export type CategorizedChangedFiles = {
   all: string[]
   added: string[]
@@ -203,11 +211,13 @@ const determineBaseAndHead = (context: Context) => {
       head = context.payload.after
 
       // when pushing a new branch, the case commit sha is all zeroes (40 to be exact)
+      // note that this also happens when pushing to a repo for the first time ever
       // don't think this is all too correct but it's what the payload looks like
       // (additionally the GITHUB_BASE_REF env variable is empty)
       if (base === '0'.repeat(40)) {
         base = undefined
       }
+
       break
     case 'merge_group':
       base = context.payload.merge_group?.base_sha
@@ -231,19 +241,137 @@ const determineBaseAndHead = (context: Context) => {
   return { base, head }
 }
 
-/**
- * Gets the SHA of the (first) parent commit of a commit
- *
- * This assumes that only one parent exists for the specified commit.
- */
-const getParentCommitSha = (octokit: ReturnType<typeof getOctokit>, context: Context, ref: string) =>
+const getCommit = (octokit: ReturnType<typeof getOctokit>, context: Context, ref: string) =>
   octokit.rest.repos
     .getCommit({
       owner: context.repo.owner,
       repo: context.repo.repo,
       ref
     })
-    .then((res) => res.data.parents[0].sha)
+    .then((res) => res.data)
+
+/**
+ * Backtrack the commit graph starting at `headSha` until a commit is found that is being pointed to by a branch
+ * or is an initial commit.
+ *
+ * @returns the found commit and whether it is an initial commit or not (type: 'initial' | 'normal')
+ */
+const backtrackToFirstBranchRef = async (octokit: ReturnType<typeof getOctokit>, context: Context, headSha: string) => {
+  const { data: allBranches } = await octokit.rest.repos.listBranches({
+    owner: context.repo.owner,
+    repo: context.repo.repo
+  })
+
+  const branches = allBranches
+    .map((branch) => ({
+      name: branch.name,
+      sha: branch.commit.sha
+    }))
+    .filter((branch) => branch.sha !== headSha)
+
+  // only one commit got pushed, we are lucky and can just use the parent commit
+  if (branches.length === 0) {
+    const { data: commit } = await octokit.rest.repos.getCommit({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      ref: headSha
+    })
+
+    if (commit.parents.length === 0) {
+      // have to deal with the initial commit still
+      return { sha: headSha, type: 'initial' }
+    } else {
+      // but in the normal case we can just use the parent commit
+      return { sha: commit.parents[0].sha, type: 'normal' }
+    }
+  }
+
+  const it = octokit.paginate.iterator(octokit.rest.repos.listCommits, {
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    sha: headSha
+  })
+
+  for await (const { data: batch } of it) {
+    const maybeBaseCommit = batch.find((commit) => branches.some((branch) => branch.sha === commit.sha))
+    const initialCommit = batch.find((commit) => commit.parents.length === 0)
+
+    if (maybeBaseCommit) {
+      console.log('base commit', maybeBaseCommit.sha)
+      return { sha: maybeBaseCommit.sha, type: 'normal' }
+    }
+
+    if (initialCommit) {
+      console.log('initial commit', initialCommit.sha)
+      return { sha: initialCommit.sha, type: 'initial' }
+    }
+  }
+
+  throw new Error('Failed to find base commit')
+}
+
+type CompareCommitsResult = {
+  data: {
+    base_commit: Commit
+    commits: Commit[]
+    files?: File[] | undefined
+  }
+}
+
+const prependCommitToCommitComparison = (commit: Commit, comparison: CompareCommitsResult): CompareCommitsResult => {
+  const x = (comparison.data.files ?? []).map(({ filename, status }) => [filename, status] as [string, File['status']])
+  const files = new Map(x)
+
+  // add files from the base commit to the files map if they don't already exist
+  if (commit.files) {
+    commit.files.forEach(({ filename, status: initialStatus }) => {
+      if (!files.has(filename)) {
+        files.set(filename, initialStatus)
+      }
+    })
+  }
+
+  return {
+    data: {
+      base_commit: commit,
+      commits:
+        commit.sha === comparison.data.base_commit.sha
+          ? comparison.data.commits
+          : [comparison.data.base_commit, ...comparison.data.commits],
+      files: Array.from(files.entries()).map(([filename, status]) => ({ filename, status }))
+    }
+  }
+}
+
+const compareCommits = async (
+  octokit: ReturnType<typeof getOctokit>,
+  context: Context,
+  base: string,
+  head: string,
+  rangeIncludesBase: boolean
+): Promise<CompareCommitsResult> => {
+  const comparison = await octokit.rest.repos.compareCommitsWithBasehead({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    basehead: `${base}...${head}`
+  })
+
+  if (!rangeIncludesBase) {
+    try {
+      return await octokit.rest.repos
+        .getCommit({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          ref: base
+        })
+        .then(({ data: commit }) => prependCommitToCommitComparison(commit, comparison))
+    } catch (error) {
+      throw new Error(`Failed to get commit ${head}: ${error}`)
+    }
+  }
+
+  return comparison
+}
 
 /**
  * deduplicates consecutive elements in an array
@@ -264,12 +392,7 @@ const deduplicateConsecutive =
     return { list: [...acc.list, curr], last: value }
   }
 
-const categorizeChangedFiles = (
-  changedFiles: {
-    status: 'added' | 'modified' | 'removed' | 'renamed' | 'copied' | 'changed' | 'unchanged'
-    filename: string
-  }[]
-) => {
+const categorizeChangedFiles = (changedFiles: File[]) => {
   const all: string[] = []
   const added: string[] = []
   const modified: string[] = []
@@ -403,7 +526,10 @@ export {
   getSemverDiffType,
   computeResponseFromChanges,
   determineBaseAndHead,
-  getParentCommitSha,
+  getCommit,
+  backtrackToFirstBranchRef,
+  compareCommits,
+  prependCommitToCommitComparison,
   deduplicateConsecutive,
   categorizeChangedFiles,
   parseVersionFromFileContents
