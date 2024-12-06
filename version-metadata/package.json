@@ -1,13 +1,13 @@
 {
   "name": "version-metadata",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "An action that checks wether your package.json version has been updated with a bit of additional metadata",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint ./src --ext ts"
   },
-  "author": "Jannik Wibker <jannik.wibker@quantco.com>",
+  "author": "Janina Wibker <janina.wibker@quantco.com>",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",

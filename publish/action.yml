@@ -1,5 +1,5 @@
 name: Publish
-author: Jannik Wibker
+author: Janina Wibker
 description: An action that decides if a new release should be published
 
 inputs:
