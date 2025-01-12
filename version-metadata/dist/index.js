@@ -8578,7 +8578,8 @@ var parseVersionFromFileContentsRegex = (fileContent, sha, gitUrl, regex) => {
 var parseVersionFromFileContentsCommand = (fileContent, sha, gitUrl, command) => {
   const child = (0, import_child_process.spawnSync)(command, [], {
     input: fileContent,
-    encoding: "utf-8"
+    encoding: "utf-8",
+    shell: true
   });
   if (child.error) {
     return {
