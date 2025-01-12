@@ -476,7 +476,8 @@ const parseVersionFromFileContentsCommand = (
 ): { success: false; error: string } | { success: true; version: string } => {
   const child = spawnSync(command, [], {
     input: fileContent,
-    encoding: 'utf-8'
+    encoding: 'utf-8',
+    shell: true
   })
 
   if (child.error) {
