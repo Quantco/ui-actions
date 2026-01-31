@@ -98,7 +98,7 @@ async function run(): Promise<VersionMetadataResponse> {
   // all resolved correctly, just not "the bigger picture" (meaning all useful types in one place).
   const octokit = getOctokit(token)
 
-  let { base: maybeBase, head } = determineBaseAndHead(context)
+  let { base: maybeBase, head } = await determineBaseAndHead(octokit, context)
 
   let baseCommitIsIncludedInRange = true
 
