@@ -8399,62 +8399,13 @@ var computeResponseFromChanges = (changes, changedFiles, oldVersion, base, head)
     };
   }
 };
-var getPullRequestFromIssueComment = (octokit, context2) => {
-  const issue = context2.payload.issue;
-  if (!issue) {
-    throw new Error("issue_comment event payload does not contain issue information.");
-  }
-  if (!issue.pull_request || !issue.pull_request.url) {
-    throw new Error("The issue comment is not made on a pull request.");
-  }
-  return octokit.rest.pulls.get({
-    owner: context2.repo.owner,
-    repo: context2.repo.repo,
-    pull_number: issue.number
-  }).then((res) => res.data);
-};
-var getPullRequestFromWorkflowDispatch = async (octokit, context2) => {
-  const ref = context2.payload.ref;
-  if (!ref) {
-    throw new Error("workflow_dispatch event does not contain a ref.");
-  }
-  if (!ref.startsWith("refs/heads/")) {
-    throw new Error("workflow_dispatch only works refs pointing to branches associated with a pull request.");
-  }
-  const branchName = ref.replace("refs/heads/", "");
-  const prs = await octokit.rest.pulls.list({
-    owner: context2.repo.owner,
-    repo: context2.repo.repo,
-    head: `${context2.repo.owner}:${branchName}`
-  }).then((res) => res.data);
-  if (prs.length !== 1) {
-    throw new Error(
-      `workflow_dispatch event on branch '${branchName}' is associated with ${prs.length} pull requests, expected exactly one.`
-    );
-  }
-  return prs[0];
-};
-var determineBaseAndHead = async (octokit, context2) => {
+var determineBaseAndHead = (context2) => {
   let base;
   let head;
   switch (context2.eventName) {
     case "pull_request":
       base = context2.payload.pull_request?.base?.sha;
       head = context2.payload.pull_request?.head?.sha;
-      break;
-    case "issue_comment":
-      {
-        const pullRequest = await getPullRequestFromIssueComment(octokit, context2);
-        base = pullRequest.base?.sha;
-        head = pullRequest.head?.sha;
-      }
-      break;
-    case "workflow_dispatch":
-      {
-        const pullRequest = await getPullRequestFromWorkflowDispatch(octokit, context2);
-        base = pullRequest.base?.sha;
-        head = pullRequest.head?.sha;
-      }
       break;
     case "push":
       base = context2.payload.before;
@@ -8469,7 +8420,7 @@ var determineBaseAndHead = async (octokit, context2) => {
       break;
     default:
       throw new Error(
-        `This action only supports pull_request, push, issue_comment, workflow_dispatch and merge_group as event types. ${context2.eventName} events are not supported. Please submit an issue on this action's GitHub repo if you believe this in correct.`
+        `This action only supports pull requests, pushes and merge_groups. ${context2.eventName} events are not supported. Please submit an issue on this action's GitHub repo if you believe this in correct.`
       );
   }
   if (!head) {
@@ -8730,7 +8681,7 @@ error: ${error}`
 }
 async function run() {
   const octokit = (0, import_github.getOctokit)(token);
-  let { base: maybeBase, head } = await determineBaseAndHead(octokit, import_github.context);
+  let { base: maybeBase, head } = determineBaseAndHead(import_github.context);
   let baseCommitIsIncludedInRange = true;
   if (maybeBase === void 0) {
     core.warning(
