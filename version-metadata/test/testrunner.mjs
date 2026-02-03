@@ -32,6 +32,13 @@ const runTest = (test) => {
         sha: test.head
       }
     },
+    issue: {
+      number: test.pr,
+      pull_request: {
+        url: `https://api.github.com/repos/${test.repo}/pulls/${test.pr}`
+      }
+    },
+    ref: `refs/heads/${test.branch}`,
     before: test.base,
     after: test.head
   }

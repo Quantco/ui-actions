@@ -87,6 +87,38 @@ const tests = [
       oldVersion: '1.0.0',
       newVersion: '1.0.0'
     }
+  },
+  {
+    description:
+      'Triggers on a pull request comment (`issue_comment`), looks up the corresponding PR, and then continues same as with a `pull_request` event',
+    pr: '17',
+    branch: 'testcase-dont-delete-pr',
+    base: '<omitted>',
+    head: '<omitted>',
+    repo: 'Quantco/ui-actions',
+    event: 'issue_comment',
+    file: 'version-metadata/package.json',
+    expected: {
+      changed: false,
+      oldVersion: '1.0.18',
+      newVersion: '1.0.18'
+    }
+  },
+  {
+    description:
+      'Triggers on `workflow_dispatch` event, uses the provided `ref` to look up associated pull requests, then continues same as with a `pull_request` event',
+    pr: '17',
+    branch: 'testcase-dont-delete-pr',
+    base: '<omitted>',
+    head: '<omitted>',
+    repo: 'Quantco/ui-actions',
+    event: 'workflow_dispatch',
+    file: 'version-metadata/package.json',
+    expected: {
+      changed: false,
+      oldVersion: '1.0.18',
+      newVersion: '1.0.18'
+    }
   }
 ]
 

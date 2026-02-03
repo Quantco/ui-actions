@@ -2,10 +2,12 @@ import { spawnSync } from 'child_process'
 import type { Context } from '@actions/github/lib/context'
 import type { getOctokit } from '@actions/github'
 
+type Octokit = ReturnType<typeof getOctokit>
+
 export type VersionDiffType = 'major' | 'minor' | 'patch' | 'pre-release'
 
 export type Unpromise<T> = T extends Promise<infer U> ? U : never
-export type Commit = Unpromise<ReturnType<ReturnType<typeof getOctokit>['rest']['repos']['getCommit']>>['data']
+export type Commit = Unpromise<ReturnType<Octokit['rest']['repos']['getCommit']>>['data']
 
 type File = {
   status: 'added' | 'modified' | 'removed' | 'renamed' | 'copied' | 'changed' | 'unchanged'
@@ -177,6 +179,56 @@ const computeResponseFromChanges = (
   }
 }
 
+const getPullRequestFromIssueComment = (octokit: Octokit, context: Context) => {
+  const issue = context.payload.issue
+
+  if (!issue) {
+    throw new Error('issue_comment event payload does not contain issue information.')
+  }
+
+  if (!issue.pull_request || !issue.pull_request.url) {
+    throw new Error('The issue comment is not made on a pull request.')
+  }
+
+  return octokit.rest.pulls
+    .get({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      pull_number: issue.number
+    })
+    .then((res) => res.data)
+}
+
+const getPullRequestFromWorkflowDispatch = async (octokit: Octokit, context: Context) => {
+  const ref = context.payload.ref
+
+  if (!ref) {
+    throw new Error('workflow_dispatch event does not contain a ref.')
+  }
+
+  if (!ref.startsWith('refs/heads/')) {
+    throw new Error('workflow_dispatch only works refs pointing to branches associated with a pull request.')
+  }
+
+  const branchName = ref.replace('refs/heads/', '')
+
+  const prs = await octokit.rest.pulls
+    .list({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      head: `${context.repo.owner}:${branchName}`
+    })
+    .then((res) => res.data)
+
+  if (prs.length !== 1) {
+    throw new Error(
+      `workflow_dispatch event on branch '${branchName}' is associated with ${prs.length} pull requests, expected exactly one.`
+    )
+  }
+
+  return prs[0]
+}
+
 /**
  * Determines the base and head commits from the payload
  *
@@ -196,7 +248,7 @@ const computeResponseFromChanges = (
  *
  * (*): For pushes which create a new branch, context.payload.before is all zeroes (40 to be exact), in this case base is returned as undefined
  */
-const determineBaseAndHead = (context: Context) => {
+const determineBaseAndHead = async (octokit: Octokit, context: Context) => {
   // Define the base and head commits to be extracted from the payload.
   let base: string | undefined
   let head: string | undefined
@@ -205,6 +257,20 @@ const determineBaseAndHead = (context: Context) => {
     case 'pull_request':
       base = context.payload.pull_request?.base?.sha
       head = context.payload.pull_request?.head?.sha
+      break
+    case 'issue_comment':
+      {
+        const pullRequest = await getPullRequestFromIssueComment(octokit, context)
+        base = pullRequest.base?.sha
+        head = pullRequest.head?.sha
+      }
+      break
+    case 'workflow_dispatch':
+      {
+        const pullRequest = await getPullRequestFromWorkflowDispatch(octokit, context)
+        base = pullRequest.base?.sha
+        head = pullRequest.head?.sha
+      }
       break
     case 'push':
       base = context.payload.before
@@ -225,7 +291,7 @@ const determineBaseAndHead = (context: Context) => {
       break
     default:
       throw new Error(
-        `This action only supports pull requests, pushes and merge_groups. ${context.eventName} events are not supported. ` +
+        `This action only supports pull_request, push, issue_comment, workflow_dispatch and merge_group as event types. ${context.eventName} events are not supported. ` +
           "Please submit an issue on this action's GitHub repo if you believe this in correct."
       )
   }
@@ -241,7 +307,7 @@ const determineBaseAndHead = (context: Context) => {
   return { base, head }
 }
 
-const getCommit = (octokit: ReturnType<typeof getOctokit>, context: Context, ref: string) =>
+const getCommit = (octokit: Octokit, context: Context, ref: string) =>
   octokit.rest.repos
     .getCommit({
       owner: context.repo.owner,
@@ -256,7 +322,7 @@ const getCommit = (octokit: ReturnType<typeof getOctokit>, context: Context, ref
  *
  * @returns the found commit and whether it is an initial commit or not (type: 'initial' | 'normal')
  */
-const backtrackToFirstBranchRef = async (octokit: ReturnType<typeof getOctokit>, context: Context, headSha: string) => {
+const backtrackToFirstBranchRef = async (octokit: Octokit, context: Context, headSha: string) => {
   const { data: allBranches } = await octokit.rest.repos.listBranches({
     owner: context.repo.owner,
     repo: context.repo.repo
@@ -344,7 +410,7 @@ const prependCommitToCommitComparison = (commit: Commit, comparison: CompareComm
 }
 
 const compareCommits = async (
-  octokit: ReturnType<typeof getOctokit>,
+  octokit: Octokit,
   context: Context,
   base: string,
   head: string,

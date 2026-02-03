@@ -8,6 +8,12 @@ Using this you can easily automate publishing to a package registry such as NPM 
 
 This action only computes metadata and doesn't push git tags, publishes a package, creates github releases, etc.
 
+This action has explicit support for the following event types:
+- `push`
+- `pull_request`
+- `issue_comment` (on pull requests)
+- `workflow_dispatch` (given ref must be associated with exactly one pull request)
+- `merge_group`
 
 ## Usage
 
