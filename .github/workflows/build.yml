@@ -12,11 +12,11 @@ jobs:
       run:
         working-directory: version-metadata
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
         with:
           version: 9.14.4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
           node-version: 20.x
           cache: pnpm
@@ -44,11 +44,11 @@ jobs:
       run:
         working-directory: publish
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
         with:
           version: 9.14.4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
           node-version: 20.x
           cache: pnpm
@@ -74,9 +74,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [commit-version-metadata, commit-publish]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
-      - uses: Quantco/ui-actions/version-metadata@v1
+      - uses: Quantco/ui-actions/version-metadata@adeb1cf49655487534b4ddaab09c3b7bdfd1d628 # v1.0.19
         id: version-metadata
         with:
           # the version of both actions should be kept in sync
@@ -84,7 +84,7 @@ jobs:
           file: version-metadata/package.json
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: Quantco/ui-actions/version-metadata@v1
+      - uses: Quantco/ui-actions/version-metadata@adeb1cf49655487534b4ddaab09c3b7bdfd1d628 # v1.0.19
         id: version-metadata-sanity-check
         with:
           file: publish/package.json
