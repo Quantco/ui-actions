@@ -3,3 +3,5 @@ packages:
   - 'publish'
 minimumReleaseAge: 10080
 blockExoticSubdeps: true
+minimumReleaseAgeExclude:
+- "@quantco/*"
